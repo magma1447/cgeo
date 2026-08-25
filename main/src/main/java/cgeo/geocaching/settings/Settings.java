@@ -244,6 +244,61 @@ public class Settings {
         }
     }
 
+    public static class PrefUserDefinedTileProvider {
+        /**
+         * Key of a tile provider read from the legacy single-Uri format of the setting.
+         * Deliberately "null", as the tile provider id derived from it must stay identical to
+         * the one used before multiple providers were supported (which appended the Uri's last
+         * path segment, always null for user-defined providers) - otherwise an upgrading user
+         * would lose their selected map source.
+         */
+        public static final String LEGACY_KEY = "null";
+
+        private final @NonNull String key;
+        private final String name;
+        private final String uri;
+
+        @JsonCreator
+        public PrefUserDefinedTileProvider(@JsonProperty("key") final String key, @JsonProperty("name") final String name, @JsonProperty("uri") final String uri) {
+            this.key = key;
+            this.name = name;
+            this.uri = uri;
+        }
+
+        @NonNull
+        public String getKey() {
+            return key;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getUri() {
+            return uri;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final PrefUserDefinedTileProvider p = (PrefUserDefinedTileProvider) o;
+            return p.getKey().equals(this.getKey());
+        }
+
+        @Override
+        public int hashCode() {
+            return key.hashCode();
+        }
+
+        @Override
+        @NonNull
+        public String toString() {
+            return StringUtils.isNotBlank(name) ? name : StringUtils.defaultString(uri);
+        }
+    }
+
     public enum RenderThemeScaleType { MAP, TEXT, SYMBOL }
 
     //NO_APPLICATION_MODE will be true if Settings is used in context of local unit tests
@@ -1312,9 +1367,49 @@ public class Settings {
         return sharedPrefs.getStringSet(getKey(R.string.pref_tileprovider_hidden), empty);
     }
 
-    @Nullable
-    public static String getUserDefinedTileProviderUri() {
-        return getString(R.string.pref_userDefinedTileProviderUri, null);
+    /**
+     * User-defined tile providers, stored as a JSON list.
+     * Understands the legacy format as well, where the very same preference held a single, bare tile provider Uri.
+     */
+    @NonNull
+    public static List<PrefUserDefinedTileProvider> getUserDefinedTileProviders() {
+        final String value = StringUtils.trimToEmpty(getString(R.string.pref_userDefinedTileProviderUri, null));
+        if (StringUtils.isEmpty(value)) {
+            return new ArrayList<>();
+        }
+        if (!value.startsWith("[")) {
+            return new ArrayList<>(Collections.singletonList(new PrefUserDefinedTileProvider(PrefUserDefinedTileProvider.LEGACY_KEY, null, value)));
+        }
+        try {
+            return MAPPER.readValue(value, new TypeReference<List<PrefUserDefinedTileProvider>>() {
+            });
+        } catch (JsonProcessingException e) {
+            Log.e("Failure parsing user-defined tile providers: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Adds, updates or (if the given provider has no Uri) removes a user-defined tile provider.
+     */
+    public static void putUserDefinedTileProvider(final PrefUserDefinedTileProvider provider) {
+        final List<PrefUserDefinedTileProvider> providers = getUserDefinedTileProviders();
+        final int index = providers.indexOf(provider);
+        if (StringUtils.isBlank(provider.getUri())) {
+            if (index == -1) {
+                return;
+            }
+            providers.remove(index);
+        } else if (index == -1) {
+            providers.add(provider);
+        } else {
+            providers.set(index, provider);
+        }
+        try {
+            putString(R.string.pref_userDefinedTileProviderUri, MAPPER.writeValueAsString(providers));
+        } catch (JsonProcessingException e) {
+            Log.e("Failure writing user-defined tile providers: " + e.getMessage());
+        }
     }
 
     public static void setMapLanguage(@Nullable final String language) {

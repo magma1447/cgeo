@@ -91,6 +91,9 @@ public class TileProviderFactory {
         }
         tileProviders.clear();
 
+        final List<Settings.PrefUserDefinedTileProvider> userDefinedTileProviders =
+                CollectionStream.of(Settings.getUserDefinedTileProviders()).filter(UserDefinedTileProviderHelper::isConfigured).toList();
+
         // --------------------------------------------------------------------
         // online-based map providers
         // --------------------------------------------------------------------
@@ -109,8 +112,8 @@ public class TileProviderFactory {
             registerTileProvider(new CyclosmSource());
             registerTileProvider(new OpenTopoMapSource());
 
-            if (UserDefinedMapsforgeOnlineSource.isConfigured()) {
-                registerTileProvider(new UserDefinedMapsforgeOnlineSource());
+            for (Settings.PrefUserDefinedTileProvider userDefined : userDefinedTileProviders) {
+                registerTileProvider(new UserDefinedMapsforgeOnlineSource(userDefined));
             }
         }
 
@@ -121,8 +124,8 @@ public class TileProviderFactory {
             registerTileProvider(new CyclosmVTMSource());
             registerTileProvider(new OpenTopoMapVTMSource());
 
-            if (UserDefinedMapsforgeVTMOnlineSource.isConfigured()) {
-                registerTileProvider(new UserDefinedMapsforgeVTMOnlineSource());
+            for (Settings.PrefUserDefinedTileProvider userDefined : userDefinedTileProviders) {
+                registerTileProvider(new UserDefinedMapsforgeVTMOnlineSource(userDefined));
             }
         }
 

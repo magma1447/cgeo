@@ -210,7 +210,11 @@
     <string translatable="false" name="pref_tileprovider">tileprovider</string>
     <string translatable="false" name="pref_previous_tileprovider">previous_tileprovider</string>
     <string translatable="false" name="pref_tileprovider_hidden">tileprovider_hidden</string>
+    <!-- holds the list of user-defined tile providers; key kept for backwards compatibility -->
     <string translatable="false" name="pref_userDefinedTileProviderUri">userDefinedTileProviderUri</string>
+
+    <!-- category user-defined tile providers -->
+    <string translatable="false" name="preference_category_userdefined_tileproviders">preference_category_userdefined_tileproviders</string>
 
     <!-- category offline maps -->
     <string translatable="false" name="pref_fakekey_info_offline_maps">fakekey_info_offline_maps</string>
