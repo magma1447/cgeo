@@ -4,12 +4,12 @@ import cgeo.geocaching.R;
 import cgeo.geocaching.downloader.DownloadSelectorActivity;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.settings.SettingsActivity;
+import cgeo.geocaching.settings.UserDefinedTileProviderPreference;
 import cgeo.geocaching.unifiedmap.tileproviders.AbstractTileProvider;
+import cgeo.geocaching.unifiedmap.tileproviders.PrefUserDefinedTileProvider;
 import cgeo.geocaching.unifiedmap.tileproviders.TileProviderFactory;
 import cgeo.geocaching.utils.LocalizationUtils;
 import cgeo.geocaching.utils.Log;
-import cgeo.geocaching.utils.PreferenceUtils;
-import cgeo.geocaching.utils.SettingsUtils;
 import cgeo.geocaching.utils.ShareUtils;
 import static cgeo.geocaching.utils.SettingsUtils.initPublicFolders;
 import static cgeo.geocaching.utils.SettingsUtils.setPrefClick;
@@ -19,11 +19,15 @@ import android.os.Bundle;
 
 import androidx.preference.ListPreference;
 import androidx.preference.MultiSelectListPreference;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceCategory;
 
 import java.util.HashMap;
+import static java.util.UUID.randomUUID;
 
 public class PreferenceMapSourcesFragment extends BasePreferenceFragment {
     private ListPreference prefTileProvicers;
+    private PreferenceCategory userDefinedTileProvidersCategory;
 
     @Override
     public void onCreatePreferences(final Bundle savedInstanceState, final String rootKey) {
@@ -46,12 +50,8 @@ public class PreferenceMapSourcesFragment extends BasePreferenceFragment {
         hideTileprovidersPref.setEntries(tpEntries);
         hideTileprovidersPref.setEntryValues(tpValues);
 
-        setUserDefinedTileProviderUriSummary(Settings.getUserDefinedTileProviderUri());
-        PreferenceUtils.setOnPreferenceChangeListener(findPreference(getString(R.string.pref_userDefinedTileProviderUri)), (preference, newValue) -> {
-            setUserDefinedTileProviderUriSummary(String.valueOf(newValue));
-            setFlagForRestartRequired();
-            return true;
-        });
+        userDefinedTileProvidersCategory = findPreference(getString(R.string.preference_category_userdefined_tileproviders));
+        recreateUserDefinedTileProviderPreferences();
 
         final ListPreference unifiedMapVariants = findPreference(getString(R.string.pref_unifiedMapVariants));
         unifiedMapVariants.setEntries(new String[]{ "Mapsforge", "VTM", "Mapsforge + VTM" });
@@ -115,8 +115,39 @@ public class PreferenceMapSourcesFragment extends BasePreferenceFragment {
 
     }
 
-    private void setUserDefinedTileProviderUriSummary(final String uri) {
-        SettingsUtils.setPrefSummary(this, R.string.pref_userDefinedTileProviderUri, LocalizationUtils.getString(R.string.settings_userDefinedTileProviderUri) + "\n\n" + uri);
+    private void recreateUserDefinedTileProviderPreferences() {
+        userDefinedTileProvidersCategory.removeAll();
+        for (PrefUserDefinedTileProvider provider : Settings.getUserDefinedTileProviders()) {
+            userDefinedTileProvidersCategory.addPreference(createUserDefinedTileProviderPreference(provider));
+        }
+        userDefinedTileProvidersCategory.addPreference(createUserDefinedTileProviderPreferenceAddNew());
+    }
+
+    private Preference createUserDefinedTileProviderPreferenceAddNew() {
+        final Preference preference = new Preference(requireContext());
+        preference.setTitle(R.string.settings_userDefinedTileProvider_addnew);
+        preference.setLayoutResource(R.layout.preference_button);
+        preference.setIconSpaceReserved(false);
+        preference.setOnPreferenceClickListener(pref -> {
+            createUserDefinedTileProviderPreference(new PrefUserDefinedTileProvider(randomUUID().toString(), "", "")).launchEditDialog();
+            return true;
+        });
+        return preference;
+    }
+
+    private UserDefinedTileProviderPreference createUserDefinedTileProviderPreference(final PrefUserDefinedTileProvider provider) {
+        final UserDefinedTileProviderPreference preference = new UserDefinedTileProviderPreference(requireContext());
+        preference.setKey(provider.getKey());
+        preference.setPersistent(false);
+        preference.setTitle(provider.getDisplayName());
+        preference.setSummary(provider.getUri());
+        preference.setIconSpaceReserved(false);
+        preference.setOnPreferenceChangeListener((pref, newValue) -> {
+            recreateUserDefinedTileProviderPreferences();
+            setFlagForRestartRequired();
+            return true;
+        });
+        return preference;
     }
 
 }
