@@ -4,7 +4,10 @@ import cgeo.geocaching.R;
 import cgeo.geocaching.downloader.DownloadSelectorActivity;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.settings.SettingsActivity;
+import cgeo.geocaching.settings.TileOverlayPreference;
 import cgeo.geocaching.settings.UserDefinedTileProviderPreference;
+import cgeo.geocaching.unifiedmap.overlays.TileOverlay;
+import cgeo.geocaching.unifiedmap.overlays.TileOverlays;
 import cgeo.geocaching.unifiedmap.tileproviders.AbstractTileProvider;
 import cgeo.geocaching.unifiedmap.tileproviders.PrefUserDefinedTileProvider;
 import cgeo.geocaching.unifiedmap.tileproviders.TileProviderFactory;
@@ -28,13 +31,16 @@ import static java.util.UUID.randomUUID;
 public class PreferenceMapSourcesFragment extends BasePreferenceFragment {
     private ListPreference prefTileProvicers;
     private PreferenceCategory userDefinedTileProvidersCategory;
+    private PreferenceCategory tileOverlaysCategory;
 
     @Override
     public void onCreatePreferences(final Bundle savedInstanceState, final String rootKey) {
         initPreferences(R.xml.preferences_map_sources, rootKey);
         prefTileProvicers = findPreference(getString(R.string.pref_tileprovider));
+        tileOverlaysCategory = findPreference(getString(R.string.preference_category_map_tileoverlays));
 
         initMapSourcePreference();
+        recreateTileOverlayPreferences();
 
         final MultiSelectListPreference hideTileprovidersPref = findPreference(getString(R.string.pref_tileprovider_hidden));
         // new unified map providers
@@ -130,6 +136,28 @@ public class PreferenceMapSourcesFragment extends BasePreferenceFragment {
         preference.setIconSpaceReserved(false);
         preference.setOnPreferenceClickListener(pref -> {
             createUserDefinedTileProviderPreference(new PrefUserDefinedTileProvider(randomUUID().toString(), "", "")).launchEditDialog();
+            return true;
+        });
+        return preference;
+    }
+
+    /** (Re-)builds the rows of the user-defined tile overlays, plus the trailing "add" button */
+    private void recreateTileOverlayPreferences() {
+        tileOverlaysCategory.removeAll();
+        for (TileOverlay overlay : TileOverlays.getAll()) {
+            tileOverlaysCategory.addPreference(new TileOverlayPreference(requireContext(), overlay, this::recreateTileOverlayPreferences));
+        }
+        tileOverlaysCategory.addPreference(createTileOverlayPreferenceAddNew());
+    }
+
+    private Preference createTileOverlayPreferenceAddNew() {
+        final Preference preference = new Preference(requireContext());
+        preference.setTitle(R.string.settings_tileOverlays_add);
+        preference.setLayoutResource(R.layout.preference_button);
+        preference.setIconSpaceReserved(false);
+        preference.setPersistent(false);
+        preference.setOnPreferenceClickListener(pref -> {
+            new TileOverlayPreference(requireContext(), TileOverlay.create("", ""), this::recreateTileOverlayPreferences).showEditDialog();
             return true;
         });
         return preference;

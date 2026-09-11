@@ -218,6 +218,9 @@
 
     <!-- category user-defined tile providers -->
     <string translatable="false" name="preference_category_userdefined_tileproviders">fakekey_category_userdefined_tileproviders</string>
+    <string translatable="false" name="pref_tileOverlays">tileOverlays</string>
+    <string translatable="false" name="preference_category_map_tileoverlays">fakekey_category_map_tileoverlays</string>
+    <string translatable="false" name="pref_tileOverlaysEnabled">tileOverlaysEnabled</string>
 
     <!-- category offline maps -->
     <string translatable="false" name="pref_fakekey_info_offline_maps">fakekey_info_offline_maps</string>
