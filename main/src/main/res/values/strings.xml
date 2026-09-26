@@ -1815,6 +1815,7 @@
     <string name="cache_menu_open_with">Open with…</string>
     <string name="cache_menu_visit">Log Visit</string>
     <string name="cache_empty_log">c:geo couldn\'t submit your log cause it is empty.</string>
+    <string name="cache_menu_fetch_all_logs">Fetch all logs</string>
     <string name="cache_menu_visit_offline">Quick offline log</string>
     <string name="cache_menu_spoilers">Spoiler images</string>
     <string name="cache_menu_around">Caches around</string>

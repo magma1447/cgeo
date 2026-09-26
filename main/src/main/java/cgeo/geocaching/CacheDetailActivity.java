@@ -19,6 +19,8 @@ import cgeo.geocaching.connector.capability.IIgnoreCapability;
 import cgeo.geocaching.connector.capability.PersonalNoteCapability;
 import cgeo.geocaching.connector.capability.PgcChallengeCheckerCapability;
 import cgeo.geocaching.connector.capability.WatchListCapability;
+import cgeo.geocaching.connector.gc.GCConnector;
+import cgeo.geocaching.connector.gc.GCParser;
 import cgeo.geocaching.connector.internal.InternalConnector;
 import cgeo.geocaching.connector.trackable.TrackableBrand;
 import cgeo.geocaching.connector.trackable.TrackableConnector;
@@ -383,6 +385,8 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             requireGeodata = currentPageId == Page.DETAILS.id;
             // resume location access
             startOrStopGeoDataListener(false);
+            // menu items can be page-specific (e.g. menu_fetch_all_logs), so rebuild on page change
+            invalidateOptionsMenuCompatible();
         }, true);
         requireGeodata = pageToOpen == Page.DETAILS.id;
 
@@ -724,6 +728,9 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         CacheMenuHandler.onPrepareOptionsMenu(menu, cache, false);
         LoggingUI.onPrepareOptionsMenu(menu, cache);
         MenuUtils.setVisible(menu.findItem(R.id.menu_set_coordinates), isUDC);
+        // fork-only, see branch build/fetch-all-logs: only meaningful on the logbook page of a GC cache
+        MenuUtils.setVisible(menu.findItem(R.id.menu_fetch_all_logs),
+                cache != null && connector instanceof GCConnector && getCurrentPageId() == Page.LOGS.id);
         MenuUtils.setVisible(menu.findItem(R.id.menu_translate), cache != null && TranslationUtils.isEnabled());
         menu.findItem(R.id.menu_translate).setTitle(TranslationUtils.getTranslationLabel());
 
@@ -826,6 +833,8 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             EmojiUtils.selectEmojiPopup(this, cache.getAssignedEmoji(), false, cache, this::setCacheIcon);
         } else if (menuItem == R.id.menu_change_description_style) {
             changeDescriptionStyle();
+        } else if (menuItem == R.id.menu_fetch_all_logs) {
+            fetchAllLogs();
         } else if (LoggingUI.onMenuItemSelected(item, this, cache, null)) {
             setNeedsRefresh();
         } else {
@@ -1133,6 +1142,30 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         refreshCacheHandler.showProgress();
 
         cache.refresh(refreshCacheHandler, AndroidRxUtils.refreshScheduler);
+    }
+
+    /**
+     * Fork-only, see branch build/fetch-all-logs. Reuses the refresh guards and progress handling, but only
+     * replaces the logs instead of re-downloading the whole listing.
+     */
+    private void fetchAllLogs() {
+        if (ProgressBarDisposableHandler.isInProgress(this) || progress.isShowing()) {
+            showToast(LocalizationUtils.getString(R.string.err_detail_still_working));
+            return;
+        }
+
+        if (!Network.isConnected()) {
+            showToast(LocalizationUtils.getString(R.string.err_server_general));
+            return;
+        }
+
+        final RefreshCacheHandler fetchAllLogsHandler = new RefreshCacheHandler(this);
+        fetchAllLogsHandler.showProgress();
+
+        AndroidRxUtils.networkScheduler.scheduleDirect(() -> {
+            GCParser.fetchAllLogEntries(cache, fetchAllLogsHandler);
+            fetchAllLogsHandler.sendEmptyMessage(DisposableHandler.DONE);
+        });
     }
 
     private void dropCache() {

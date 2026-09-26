@@ -1504,6 +1504,49 @@ public final class GCParser {
     }
 
     private static Observable<LogEntry> getLogs(final String userToken, final Logs logType, final int take) {
+        return getLogs(userToken, logType, 1, take);
+    }
+
+    /**
+     * Retrieve the complete logbook by requesting page after page until the server runs out of entries.
+     * <br>
+     * Deliberately defensive about how the server handles paging: it stops on an empty page, and also when a
+     * page contains nothing we have not already seen (which is what happens if {@code idx} were to be ignored).
+     * That way a clamped {@code num} only costs additional requests instead of silently truncating the result.
+     */
+    @WorkerThread
+    private static List<LogEntry> getAllLogs(final String userToken, final Logs logType, @Nullable final DisposableHandler handler) {
+        final List<LogEntry> allLogs = new ArrayList<>();
+        final Set<String> seenServiceLogIds = new HashSet<>();
+
+        for (int idx = 1; idx <= GCConstants.MAX_LOG_PAGES; idx++) {
+            if (DisposableHandler.isDisposed(handler)) {
+                break;
+            }
+            DisposableHandler.sendLoadProgressDetail(handler, R.string.cache_dialog_loading_details_status_logs);
+
+            final List<LogEntry> logsOfPage =
+                    getLogs(userToken, logType, idx, GCConstants.NUMBER_OF_LOGS_PER_PAGE).toList().blockingGet();
+            if (logsOfPage.isEmpty()) {
+                break;
+            }
+
+            boolean pageHadNewLogs = false;
+            for (final LogEntry logEntry : logsOfPage) {
+                if (logEntry.serviceLogId == null || seenServiceLogIds.add(logEntry.serviceLogId)) {
+                    allLogs.add(logEntry);
+                    pageHadNewLogs = true;
+                }
+            }
+            if (!pageHadNewLogs) {
+                break;
+            }
+        }
+
+        return allLogs;
+    }
+
+    private static Observable<LogEntry> getLogs(final String userToken, final Logs logType, final int idx, final int take) {
         if (userToken.isEmpty()) {
             Log.e("GCParser.getLogs: unable to extract userToken");
             return Observable.empty();
@@ -1512,7 +1555,7 @@ public final class GCParser {
         return Observable.defer(() -> {
             final Parameters params = new Parameters(
                     "tkn", userToken,
-                    "idx", "1",
+                    "idx", String.valueOf(idx),
                     "num", String.valueOf(take),
                     "decrypt", "false"); // fetch encrypted logs as such
             if (logType != Logs.ALL) {
@@ -1707,7 +1750,7 @@ public final class GCParser {
         }
 
         // merge log-entries (friend-logs and log-times)
-        mergeAndStoreLogEntries(cache, page, handler);
+        mergeAndStoreLogEntries(cache, false, handler);
 
         //add gallery images if wanted
         addImagesFromGallery(cache, handler);
@@ -1719,21 +1762,46 @@ public final class GCParser {
         }
     }
 
-    private static void mergeAndStoreLogEntries(@NonNull final Geocache cache, final String page, final DisposableHandler handler) {
+    /**
+     * Fetch the complete logbook of a cache and replace the stored logs with it.
+     * <br>
+     * Fork-only addition, see branch build/fetch-all-logs. Triggered explicitly from the logbook view, never
+     * as part of a regular cache refresh: on a cache with a lot of logs this issues a lot of requests.
+     */
+    @WorkerThread
+    public static void fetchAllLogEntries(@NonNull final Geocache cache, final DisposableHandler handler) {
+        mergeAndStoreLogEntries(cache, true, handler);
+    }
+
+    private static void mergeAndStoreLogEntries(@NonNull final Geocache cache, final boolean fetchAll, final DisposableHandler handler) {
 
         DisposableHandler.sendLoadProgressDetail(handler, R.string.cache_dialog_loading_details_status_logs);
 
         final String userToken = getLogsPageUserToken(cache);
-        final Observable<LogEntry> logs = getLogs(userToken, Logs.ALL);
-        final Observable<LogEntry> ownLogs = getLogs(userToken, Logs.OWN).cache();
-        final Observable<LogEntry> friendLogs = Settings.isFriendLogsWanted() ?
-                getLogs(userToken, Logs.FRIENDS).cache() : Observable.empty();
-        final Observable<LogEntry> ownerLogs = getLogs(userToken, Logs.OWNER).cache();
+        final boolean friendLogsWanted = Settings.isFriendLogsWanted();
 
-        final List<LogEntry> logsBlocked = logs.toList().blockingGet();
-        final List<LogEntry> ownLogEntriesBlocked = ownLogs.toList().blockingGet();
-        final List<LogEntry> friendLogsBlocked = friendLogs.toList().blockingGet();
-        final List<LogEntry> ownerLogsBlocked = ownerLogs.toList().blockingGet();
+        final List<LogEntry> logsBlocked;
+        final List<LogEntry> ownLogEntriesBlocked;
+        final List<LogEntry> friendLogsBlocked;
+        final List<LogEntry> ownerLogsBlocked;
+        if (fetchAll) {
+            // paged, sequentially - all four log types can exceed a single page
+            logsBlocked = getAllLogs(userToken, Logs.ALL, handler);
+            ownLogEntriesBlocked = getAllLogs(userToken, Logs.OWN, handler);
+            friendLogsBlocked = friendLogsWanted ? getAllLogs(userToken, Logs.FRIENDS, handler) : new ArrayList<>();
+            ownerLogsBlocked = getAllLogs(userToken, Logs.OWNER, handler);
+        } else {
+            final Observable<LogEntry> logs = getLogs(userToken, Logs.ALL);
+            final Observable<LogEntry> ownLogs = getLogs(userToken, Logs.OWN).cache();
+            final Observable<LogEntry> friendLogs = friendLogsWanted ?
+                    getLogs(userToken, Logs.FRIENDS).cache() : Observable.empty();
+            final Observable<LogEntry> ownerLogs = getLogs(userToken, Logs.OWNER).cache();
+
+            logsBlocked = logs.toList().blockingGet();
+            ownLogEntriesBlocked = ownLogs.toList().blockingGet();
+            friendLogsBlocked = friendLogs.toList().blockingGet();
+            ownerLogsBlocked = ownerLogs.toList().blockingGet();
+        }
         final OfflineLogEntry offlineLog = DataStore.loadLogOffline(cache.getGeocode());
 
         List<LogEntry> ownLogsFromDb = Collections.emptyList();

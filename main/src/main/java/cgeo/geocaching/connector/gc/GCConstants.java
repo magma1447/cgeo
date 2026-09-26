@@ -223,6 +223,16 @@ public final class GCConstants {
      */
     static final int NUMBER_OF_LOGS = 35;
 
+    /**
+     * Number of logs to retrieve per request when fetching the complete logbook
+     */
+    static final int NUMBER_OF_LOGS_PER_PAGE = 100;
+
+    /**
+     * Upper bound on the number of requests issued when fetching the complete logbook
+     */
+    static final int MAX_LOG_PAGES = 100;
+
     private GCConstants() {
         // this class shall not have instances
     }
