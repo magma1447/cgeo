@@ -1557,6 +1557,7 @@ public final class GCParser {
                     "tkn", userToken,
                     "idx", String.valueOf(idx),
                     "num", String.valueOf(take),
+                    "sortOrder", "0", // pin the order, otherwise paging is not guaranteed to be stable
                     "decrypt", "false"); // fetch encrypted logs as such
             if (logType != Logs.ALL) {
                 params.add(logType.getParamName(), Boolean.toString(Boolean.TRUE));
