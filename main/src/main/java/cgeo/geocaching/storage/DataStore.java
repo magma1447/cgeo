@@ -4198,7 +4198,9 @@ public class DataStore {
 
                 LogEntry.Builder log = null;
                 int cnt = 0;
-                while (cursor.moveToNext() && logs.size() < 100) {
+                // fork-only: upstream stops at 100 here (and then appends the pending builder below, so it
+                // actually returns 101). That cap silently truncated the result of "Fetch all logs".
+                while (cursor.moveToNext()) {
                     cnt++;
                     if (log == null || log.getId() != cursor.getInt(0)) {
                         // Start of a new log entry group (we may have several entries if the log has several images).
