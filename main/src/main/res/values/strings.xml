@@ -1782,6 +1782,7 @@
     <string name="cache_dialog_loading_details_status_details">Processing details</string>
     <string name="cache_dialog_loading_details_status_spoilers">Loading spoiler images</string>
     <string name="cache_dialog_loading_details_status_logs">Loading logs</string>
+    <string name="cache_dialog_loading_details_status_logs_page">Loading logs (page %1$d, %2$d so far)</string>
     <string name="cache_dialog_loading_details_status_waypoints">Processing waypoints</string>
     <string name="cache_dialog_loading_details_status_cache">Caching Data</string>
     <string name="cache_dialog_loading_details_status_render">Render view</string>

@@ -130,6 +130,12 @@ public abstract class DisposableHandler extends Handler implements Disposable {
         }
     }
 
+    public static void sendLoadProgressDetail(@Nullable final Handler handler, @StringRes final int resourceId, final Object... params) {
+        if (handler != null) {
+            handler.obtainMessage(UPDATE_LOAD_PROGRESS_DETAIL, LocalizationUtils.getString(resourceId, params)).sendToTarget();
+        }
+    }
+
     public static void sendShowStatusToast(@Nullable final Handler handler, @StringRes final int resourceId) {
         if (handler != null) {
             handler.obtainMessage(UPDATE_SHOW_STATUS_TOAST, LocalizationUtils.getString(resourceId)).sendToTarget();

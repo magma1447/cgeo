@@ -1523,7 +1523,7 @@ public final class GCParser {
             if (DisposableHandler.isDisposed(handler)) {
                 break;
             }
-            DisposableHandler.sendLoadProgressDetail(handler, R.string.cache_dialog_loading_details_status_logs);
+            DisposableHandler.sendLoadProgressDetail(handler, R.string.cache_dialog_loading_details_status_logs_page, idx, allLogs.size());
 
             final List<LogEntry> logsOfPage =
                     getLogs(userToken, logType, idx, GCConstants.NUMBER_OF_LOGS_PER_PAGE).toList().blockingGet();
