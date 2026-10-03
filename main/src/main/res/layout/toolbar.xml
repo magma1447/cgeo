@@ -7,6 +7,6 @@
     android:layout_height="@dimen/actionbar_height"
     android:minHeight="@dimen/actionbar_height"
     android:background="@color/colorBackgroundActionBar"
-    android:elevation="4dp"
+    android:elevation="0dp"
     android:theme="@style/tool_bar"
     app:popupTheme="@style/appToolbarPopup"/>

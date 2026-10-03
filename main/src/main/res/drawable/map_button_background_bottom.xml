@@ -6,8 +6,8 @@
         <shape android:shape="rectangle">
             <solid android:color="@color/osm_zoomcontrolbackground" />
             <corners
-                android:bottomLeftRadius="2dp"
-                android:bottomRightRadius="2dp"
+                android:bottomLeftRadius="12dp"
+                android:bottomRightRadius="12dp"
                 />
         </shape>
     </item>
