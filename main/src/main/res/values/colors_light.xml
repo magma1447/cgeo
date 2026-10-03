@@ -3,30 +3,30 @@
 
     <!-- light theme-specific colors only -->
 
-    <color name="colorText">@color/just_black</color>
-    <color name="colorTextDark">#AA000000</color>
-    <color name="colorTextHint">#FF666666</color>
+    <color name="colorText">@color/md_on_surface</color>
+    <color name="colorTextDark">@color/md_on_surface_variant</color>
+    <color name="colorTextHint">#FF7A6858</color>
     <color name="archived_cache_color">#FFAC0B0B</color>
 
-    <color name="colorTextHeadline">#88000000</color>
-    <color name="colorIconMenu">#FF3D3D3D</color>
+    <color name="colorTextHeadline">#99221A12</color>
+    <color name="colorIconMenu">@color/md_on_surface_variant</color>
 
-    <color name="colorBackground">#FFFFFFFF</color>
-    <color name="colorBackgroundTransparent">#44FFFFFF</color>
-    <color name="colorBackgroundDialog">#FFFFFFFF</color>
-    <color name="colorBackgroundSelected">#FFCCCCCC</color>
+    <color name="colorBackground">@color/md_surface</color>
+    <color name="colorBackgroundTransparent">#44FFF8F4</color>
+    <color name="colorBackgroundDialog">@color/md_surface_container_high</color>
+    <color name="colorBackgroundSelected">#FFFCDDBF</color>
 
-    <color name="colorTextHintActionBar">#FFAAAAAA</color>
-    <color name="colorTextActionBar">#FFFFFFFF</color>
-    <color name="colorBackgroundActionBar">#FF2A2A2A</color>
+    <color name="colorTextHintActionBar">@color/md_on_surface_variant</color>
+    <color name="colorTextActionBar">@color/md_on_surface</color>
+    <color name="colorBackgroundActionBar">@color/md_surface_container</color>
 
-    <color name="colorTextTabBar">@color/colorTextDark</color>
-    <color name="colorBackgroundTabBar">#FFF3F3F3</color>
+    <color name="colorTextTabBar">@color/md_on_surface_variant</color>
+    <color name="colorBackgroundTabBar">@color/md_surface_container</color>
 
-    <color name="colorTextMainInfo">#FF3D3D3D</color>
-    <color name="colorBackgroundMainInfo">#FFDEDEDE</color>
+    <color name="colorTextMainInfo">@color/md_on_surface_variant</color>
+    <color name="colorBackgroundMainInfo">@color/md_surface_container_high</color>
 
-    <color name="colorSeparator">#33000000</color>
+    <color name="colorSeparator">@color/md_outline_variant</color>
 
     <color name="attribute_filter_disabled">#ffcccccc</color>
     <color name="attribute_category_tools_disabled">#ffb26666</color>
@@ -35,5 +35,52 @@
     <color name="attribute_category_duration_disabled">#ff667caf</color>
     <color name="attribute_category_surroundings_disabled">#ff848d91</color>
     <color name="attribute_category_transport_disabled">#ff8a8a8a</color>
+
+
+    <!-- map overlay buttons -->
+    <color name="osm_zoomcontrol">@color/md_on_surface_variant</color>
+    <color name="osm_zoomcontrolbackground">@color/md_surface_container_low</color>
+
+    <!-- favorite count badges in cache lists -->
+    <color name="favorite_badge_green">#FFB9E2BA</color>
+    <color name="favorite_badge_orange">#FFFFD9A0</color>
+    <color name="favorite_badge_red">#FFFFC4BE</color>
+
+    <!-- Material 3 color roles (light), generated with material-color-utilities
+         SchemeFidelity from the c:geo brand orange #F5981D -->
+    <color name="md_primary">#895100</color>
+    <color name="md_on_primary">#FFFFFF</color>
+    <color name="md_primary_container">#F5981D</color>
+    <color name="md_on_primary_container">#613700</color>
+    <color name="md_secondary">#7E5629</color>
+    <color name="md_on_secondary">#FFFFFF</color>
+    <color name="md_secondary_container">#FEC790</color>
+    <color name="md_on_secondary_container">#795125</color>
+    <color name="md_tertiary">#00658F</color>
+    <color name="md_on_tertiary">#FFFFFF</color>
+    <color name="md_tertiary_container">#1EB8FF</color>
+    <color name="md_on_tertiary_container">#004664</color>
+    <color name="md_error">#BA1A1A</color>
+    <color name="md_on_error">#FFFFFF</color>
+    <color name="md_error_container">#FFDAD6</color>
+    <color name="md_on_error_container">#93000A</color>
+    <color name="md_background">#FFF8F4</color>
+    <color name="md_on_background">#221A12</color>
+    <color name="md_surface">#FFF8F4</color>
+    <color name="md_on_surface">#221A12</color>
+    <color name="md_surface_variant">#F7DEC9</color>
+    <color name="md_on_surface_variant">#544435</color>
+    <color name="md_outline">#877462</color>
+    <color name="md_outline_variant">#DAC2AE</color>
+    <color name="md_inverse_surface">#382F26</color>
+    <color name="md_inverse_on_surface">#FFEEE0</color>
+    <color name="md_inverse_primary">#FFB86D</color>
+    <color name="md_surface_dim">#E8D7CA</color>
+    <color name="md_surface_bright">#FFF8F4</color>
+    <color name="md_surface_container_lowest">#FFFFFF</color>
+    <color name="md_surface_container_low">#FFF1E7</color>
+    <color name="md_surface_container">#FCEBDD</color>
+    <color name="md_surface_container_high">#F6E5D8</color>
+    <color name="md_surface_container_highest">#F0E0D2</color>
 
 </resources>

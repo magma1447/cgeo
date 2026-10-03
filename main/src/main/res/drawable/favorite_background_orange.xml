@@ -2,10 +2,8 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle" >
 
-    <stroke
-        android:width="1dp"
-        android:color="#99000000" />
+    <solid android:color="@color/favorite_badge_orange" />
 
-    <solid android:color="#99FFAA00" />
+    <corners android:radius="8dp" />
 
 </shape>
