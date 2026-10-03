@@ -12,6 +12,79 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
+    <!-- search pill: opens the search page -->
+    <LinearLayout
+        android:id="@+id/search_pill"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_below="@id/wherigo_info_bar"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/search_pill_background"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_menu_search"
+            app:tint="@color/md_on_surface_variant" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="@string/search_bar_hint"
+            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+            android:textColor="@color/md_on_surface_variant" />
+    </LinearLayout>
+
+    <!-- position card -->
+    <LinearLayout
+        android:id="@+id/location_area"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/search_pill"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/section_card"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="10dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/home_your_position"
+            android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+            android:textColor="@color/md_primary" />
+
+        <cgeo.geocaching.ui.LocationStatusView
+            android:id="@+id/location_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp" />
+
+        <TextView
+            android:id="@+id/offline_counter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/stat_tile"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+            android:textColor="@color/colorText"
+            android:visibility="gone"
+            tools:visibility="visible"
+            tools:text="1234 caches stored offline" />
+    </LinearLayout>
+
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/status"
         android:name="cgeo.geocaching.StatusFragment"
@@ -19,7 +92,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dip"
         android:layout_marginTop="16dp"
-        android:layout_below="@+id/wherigo_info_bar"
+        android:layout_below="@id/location_area"
         tools:layout="@layout/status" />
 
     <LinearLayout
@@ -102,10 +175,10 @@
         android:id="@+id/connectorstatus_area"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/quicklaunchitems"
-        android:layout_below="@id/info_notloggedin"
-        android:layout_marginTop="32dp"
-        android:layout_marginBottom="16dp"
+        android:layout_below="@id/quicklaunchitems"
+        android:layout_alignParentBottom="true"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
         android:divider="@null"
         android:orientation="vertical"
         android:scrollbars="none"
@@ -115,35 +188,13 @@
         android:id="@+id/quicklaunchitems"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/location_area"
-        android:layout_marginBottom="16dp"
+        android:layout_below="@id/info_notloggedin"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginTop="16dp"
         android:gravity="center_horizontal"
         android:orientation="horizontal">
 
         <!-- will be filled dynamically with quick launch buttons -->
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/location_area"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginLeft="6dip"
-        android:layout_marginRight="6dip"
-        android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/offline_counter"
-            style="@style/location_current"
-            android:visibility="gone"
-            tools:text="1234 caches stored offline"/>
-        <View style="@style/separator_horizontal" />
-
-        <cgeo.geocaching.ui.LocationStatusView
-            android:id="@+id/location_status"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
 
     </LinearLayout>
 

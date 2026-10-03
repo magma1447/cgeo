@@ -5,7 +5,7 @@
     android:id="@+id/one_cache"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:background="?android:attr/selectableItemBackground"
+    android:background="@drawable/list_card_background"
     tools:context=".ui.CacheListAdapter">
 
     <!-- "found" marker, vertical green/red line -->
@@ -63,6 +63,7 @@
             android:textIsSelectable="false"
             android:textSize="@dimen/textSize_listsPrimary"
             android:textColor="@color/colorText_listsPrimary"
+            android:fontFamily="sans-serif-medium"
             tools:text="name" />
 
         <!-- cache attributes and other info -->

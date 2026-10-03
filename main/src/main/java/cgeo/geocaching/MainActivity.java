@@ -291,6 +291,13 @@ public class MainActivity extends AbstractNavigationBarActivity {
             init();
             cLog.add("init");
 
+            binding.searchPill.setOnClickListener(v -> {
+                // behave exactly like the search entry of the navigation bar
+                final View searchItem = findViewById(MENU_SEARCH);
+                if (searchItem != null) {
+                    searchItem.performClick();
+                }
+            });
             binding.infoNotloggedin.setOnClickListener(v ->
                     SimpleDialog.of(this).setTitle(R.string.warn_notloggedin_title).setMessage(R.string.warn_notloggedin_long).setButtons(SimpleDialog.ButtonTextSet.YES_NO).confirm(() -> SettingsActivity.openForScreen(R.string.preference_screen_services, this)));
 
@@ -403,9 +410,9 @@ public class MainActivity extends AbstractNavigationBarActivity {
     }
 
     private void prepareQuickLaunchItems() {
-        final int dimSize = DisplayUtils.getPxFromDp(getResources(), 48.0f, 1.0f);
-        final int dimMargin = DisplayUtils.getPxFromDp(getResources(), 7.0f, 1.0f);
-        final LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dimSize, dimSize);
+        // labeled tiles sharing the row width equally
+        final int dimMargin = DisplayUtils.getPxFromDp(getResources(), 4.0f, 1.0f);
+        final LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
         lp.setMargins(dimMargin, 0, dimMargin, 0);
 
         final List<Integer> quicklaunchitems = Settings.getInfoItems(R.string.pref_quicklaunchitems, 1);
@@ -422,6 +429,7 @@ public class MainActivity extends AbstractNavigationBarActivity {
     private void addButton(@DrawableRes final int iconRes, final LinearLayout.LayoutParams lp, final Runnable action, final String tooltip, final java.util.function.Consumer<View> viewInitializer) {
         final MaterialButton b = new MaterialButton(this, null, R.attr.quickLaunchButtonStyle);
         b.setIconResource(iconRes);
+        b.setText(tooltip);
         b.setLayoutParams(lp);
         b.setVisibility(View.VISIBLE);
         b.setOnClickListener(view -> action.run());

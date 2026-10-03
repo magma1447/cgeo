@@ -11,7 +11,12 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="4dip" >
+        android:paddingHorizontal="12dp"
+        android:paddingBottom="16dp" >
+
+        <include
+            android:id="@+id/hero"
+            layout="@layout/cachedetail_hero" />
 
         <!-- Details list -->
 
@@ -19,6 +24,10 @@
             android:id="@+id/details_list"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/section_card"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp"
             android:orientation="vertical" >
         </LinearLayout>
 
@@ -28,12 +37,11 @@
             android:id="@+id/attributes_box"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/section_card"
+            android:paddingVertical="12dp"
+            android:paddingHorizontal="6dp"
             android:orientation="vertical" >
-
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
 
             <cgeo.geocaching.ui.WrappingGridView
                 android:id="@+id/attributes_grid"
@@ -62,7 +70,17 @@
                 tools:text="attribute 1\nattribute 2\nattribute 3"/>
         </LinearLayout>
 
-        <!-- Offline box -->
+        <!-- Offline box and the other per-cache actions, grouped in one card -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/section_card"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="12dp"
+            android:orientation="vertical">
+
         <include layout="@layout/cache_offlinebox" />
 
         <!-- Named filter box -->
@@ -291,6 +309,8 @@
                     app:icon="@drawable/ic_menu_favorite_remove"
                     android:visibility="gone" />
             </RelativeLayout>
+        </LinearLayout>
+
         </LinearLayout>
 
         <!-- License Box -->

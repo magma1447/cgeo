@@ -30,6 +30,7 @@ import cgeo.geocaching.databinding.CachedetailDescriptionPageBinding;
 import cgeo.geocaching.databinding.CachedetailDetailsPageBinding;
 import cgeo.geocaching.databinding.CachedetailImagegalleryPageBinding;
 import cgeo.geocaching.databinding.CachedetailInventoryPageBinding;
+import cgeo.geocaching.databinding.CachedetailStatTileBinding;
 import cgeo.geocaching.databinding.CachedetailWaypointsPageBinding;
 import cgeo.geocaching.enumerations.CacheType;
 import cgeo.geocaching.enumerations.LoadFlags;
@@ -154,6 +155,7 @@ import android.widget.TextView.BufferType;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.TooltipCompat;
@@ -1360,6 +1362,16 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             return CachedetailDetailsPageBinding.inflate(inflater, container, false);
         }
 
+        private static void setStatTile(@NonNull final CachedetailStatTileBinding tile, @StringRes final int label, @NonNull final String value) {
+            tile.statValue.setText(value);
+            tile.statLabel.setText(label);
+        }
+
+        @NonNull
+        private static String formatRating(final float rating) {
+            return String.format(Locale.getDefault(), "%.1f", rating);
+        }
+
         @Override
         public long getPageId() {
             return Page.DETAILS.id;
@@ -1383,10 +1395,19 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             // Reference to the details list and favorite line, so that the helper-method can access them without an additional argument
             final CacheDetailsCreator details = new CacheDetailsCreator(activity, binding.detailsList);
 
-            // cache name (full name), may be editable
+            // header: cache name (full name, may be editable), geocode, type and the key numbers
             // Not using colored cache names at this place to have at least one place without any formatting to support visually impaired users
-            final TextView cachename = details.add(R.string.cache_name, cache.getName()).valueView;
+            final TextView cachename = binding.hero.heroName;
+            cachename.setText(cache.getName());
+            binding.hero.heroIcon.setImageResource(cache.getType().iconId);
+            binding.hero.heroIcon.setBackgroundTintList(ColorStateList.valueOf(activity.getResources().getColor(cache.getType().typeColor, null)));
+            binding.hero.heroSubtitle.setText(cache.getShortGeocode() + " · " + cache.getType().getL10n());
             details.addShareAction(cachename);
+            details.addShareAction(binding.hero.heroSubtitle);
+            setStatTile(binding.hero.statDifficulty, R.string.cache_difficulty, cache.getDifficulty() > 0 ? formatRating(cache.getDifficulty()) : "–");
+            setStatTile(binding.hero.statTerrain, R.string.cache_terrain, cache.getTerrain() > 0 ? formatRating(cache.getTerrain()) : "–");
+            setStatTile(binding.hero.statSize, R.string.cache_size, cache.getSize().getL10n());
+            setStatTile(binding.hero.statFavorites, R.string.caches_sort_favorites, cache.getFavoritePoints() > 0 ? String.valueOf(cache.getFavoritePoints()) : "–");
             if (cache.supportsNamechange()) {
                 cachename.setOnClickListener(v -> Dialogs.input(activity, LocalizationUtils.getString(R.string.cache_name_set), cache.getName(), LocalizationUtils.getString(R.string.caches_sort_name), name -> {
                     cachename.setText(name);
@@ -1396,18 +1417,13 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
                 }));
             }
 
-            details.add(R.string.cache_type, cache.getType().getL10n());
             if (cache.getType() == CacheType.ADVLAB) {
                 details.addAlcMode(cache);
             }
-            details.addSize(cache);
-            details.addShareAction(details.add(R.string.cache_geocode, cache.getShortGeocode()).valueView);
             details.addCacheState(cache);
 
             activity.cacheDistanceView = details.addDistance(cache, activity.cacheDistanceView);
 
-            details.addDifficulty(cache);
-            details.addTerrain(cache);
             details.addRating(cache);
 
             // favorite count
