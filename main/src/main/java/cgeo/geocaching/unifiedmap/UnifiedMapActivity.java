@@ -73,6 +73,7 @@ import cgeo.geocaching.utils.AndroidRxUtils;
 import cgeo.geocaching.utils.CacheUtils;
 import cgeo.geocaching.utils.CommonUtils;
 import cgeo.geocaching.utils.CompactIconModeUtils;
+import cgeo.geocaching.utils.DisplayUtils;
 import cgeo.geocaching.utils.Formatter;
 import cgeo.geocaching.utils.HistoryTrackUtils;
 import cgeo.geocaching.utils.LifecycleAwareBroadcastReceiver;
@@ -117,6 +118,8 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -200,6 +203,7 @@ public class UnifiedMapActivity extends AbstractNavigationBarMapActivity impleme
 
         setContentView(R.layout.unifiedmap_activity);
         showSpacer(true);
+        makeToolbarFloat();
         if (null != findViewById(R.id.live_map_status)) {
             findViewById(R.id.live_map_status).getBackground().mutate();
         }
@@ -343,6 +347,22 @@ public class UnifiedMapActivity extends AbstractNavigationBarMapActivity impleme
                 getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
             }
         }
+    }
+
+    /** let the toolbar float over the map as a rounded card instead of a full-width bar */
+    private void makeToolbarFloat() {
+        final View toolbar = findViewById(R.id.appToolbar);
+        if (toolbar == null || !(toolbar.getLayoutParams() instanceof ViewGroup.MarginLayoutParams)) {
+            return;
+        }
+        final int margin = DisplayUtils.getPxFromDp(getResources(), 12.0f, 1.0f);
+        final ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) toolbar.getLayoutParams();
+        lp.setMargins(margin, margin / 2, margin, 0);
+        toolbar.setLayoutParams(lp);
+        toolbar.setBackgroundResource(R.drawable.floating_toolbar_background);
+        toolbar.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+        toolbar.setClipToOutline(true);
+        toolbar.setElevation(DisplayUtils.getPxFromDp(getResources(), 3.0f, 1.0f));
     }
 
     public AbstractMapFragment getMapFragment() {

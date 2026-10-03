@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/stat_tile"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingHorizontal="4dp"
+    android:paddingVertical="10dp">
+
+    <TextView
+        android:id="@+id/stat_value"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:gravity="center"
+        android:maxLines="1"
+        app:autoSizeTextType="uniform"
+        app:autoSizeMinTextSize="11sp"
+        app:autoSizeMaxTextSize="22sp"
+        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+        android:textColor="@color/colorText"
+        android:fontFeatureSettings="tnum"
+        tools:text="1.5" />
+
+    <TextView
+        android:id="@+id/stat_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+        android:textColor="@color/colorTextHint"
+        tools:text="Difficulty" />
+</LinearLayout>

@@ -226,10 +226,20 @@
     <style name="quicklaunch_button" parent="button_icon_accent">
         <item name="materialThemeOverlay">@style/IconButtonThemeOverlay</item>
         <item name="backgroundTint">@color/md_secondary_container</item>
-        <item name="cornerRadius">16dip</item>
+        <item name="cornerRadius">20dip</item>
         <item name="strokeWidth">0dip</item>
-        <item name="android:layout_margin">7dip</item>
-        <item name="iconSize">24dp</item>
+        <item name="android:layout_margin">4dip</item>
+        <item name="iconSize">26dp</item>
+        <item name="iconGravity">top</item>
+        <item name="iconPadding">6dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:paddingLeft">4dp</item>
+        <item name="android:paddingRight">4dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:textColor">@color/md_on_secondary_container</item>
+        <item name="iconTint">@color/md_on_secondary_container</item>
     </style>
 
     <style name="button_icon_colored" parent="button_icon_accent">
