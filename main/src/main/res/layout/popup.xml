@@ -76,7 +76,11 @@
                 </LinearLayout>
             </FrameLayout>
 
-            <include layout="@layout/cache_offlinebox" />
+            <RelativeLayout style="@style/separator_horizontal_layout">
+                <View style="@style/separator_horizontal" />
+            </RelativeLayout>
+
+            <include layout="@layout/cache_offlinebox_popup" />
 
             <RelativeLayout
                 android:id="@+id/offline_hint_separator"
@@ -107,6 +111,7 @@
                     android:id="@+id/more_details"
                     style="@style/button_popup_more"
                     android:layout_alignParentLeft="true"
+                    android:layout_toLeftOf="@id/buttonbox"
                     android:layout_centerVertical="true"
                     android:text="@string/popup_more" />
                 <LinearLayout

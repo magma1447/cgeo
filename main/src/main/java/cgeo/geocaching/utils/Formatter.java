@@ -390,7 +390,32 @@ public final class Formatter {
 
     @NonNull
     public static String formatStoredAgo(final long updatedTimeMillis) {
-        // compact form, e.g. "Stored ~4 h ago", so that it fits on one row with the filter info
+        final long minutes = (System.currentTimeMillis() - updatedTimeMillis) / MINUTE_IN_MILLIS;
+        final long days = minutes / MINUTES_PER_DAY;
+
+        final String ago;
+        if (updatedTimeMillis == 0L) {
+            ago = "";
+        } else if (minutes < 15) {
+            ago = LocalizationUtils.getString(R.string.cache_offline_time_mins_few);
+        } else if (minutes < 60) {
+            ago = LocalizationUtils.getPlural(R.plurals.cache_offline_about_time_mins, (int) minutes);
+        } else if (days < 2) {
+            ago = LocalizationUtils.getPlural(R.plurals.cache_offline_about_time_hours, (int) (minutes / 60));
+        } else if (days < DAYS_PER_MONTH) {
+            ago = LocalizationUtils.getPlural(R.plurals.cache_offline_about_time_days, (int) days);
+        } else if (days < 365) {
+            ago = LocalizationUtils.getPlural(R.plurals.cache_offline_about_time_months, (int) (days / DAYS_PER_MONTH));
+        } else {
+            ago = LocalizationUtils.getString(R.string.cache_offline_about_time_year);
+        }
+
+        return LocalizationUtils.getString(R.string.cache_offline_stored_ago, ago);
+    }
+
+    @NonNull
+    public static String formatStoredAgoCompact(final long updatedTimeMillis) {
+        // compact form for the map popup, e.g. "Stored ~4h ago"
         if (updatedTimeMillis == 0L) {
             return LocalizationUtils.getString(R.string.cache_offline_stored_ago, "");
         }
@@ -398,15 +423,15 @@ public final class Formatter {
         final long days = minutes / MINUTES_PER_DAY;
         final String age;
         if (minutes < 60) {
-            age = minutes + " min";
+            age = minutes + "min";
         } else if (days < 2) {
-            age = (minutes / 60) + " h";
+            age = (minutes / 60) + "h";
         } else if (days < DAYS_PER_MONTH) {
-            age = days + " d";
+            age = days + "d";
         } else if (days < 365) {
-            age = (days / DAYS_PER_MONTH) + " mo";
+            age = (days / DAYS_PER_MONTH) + "mo";
         } else {
-            age = (days / 365) + " y";
+            age = (days / 365) + "y";
         }
         return LocalizationUtils.getString(R.string.cache_offline_stored_ago_short, age);
     }
