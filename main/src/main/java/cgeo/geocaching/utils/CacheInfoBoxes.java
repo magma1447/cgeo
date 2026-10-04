@@ -125,7 +125,9 @@ public class CacheInfoBoxes {
 
         if (cache.isOffline()) {
             final long detailedUpdate = cache.getDetailedUpdate();
-            offlineText.setText(Formatter.formatStoredAgo(detailedUpdate));
+            // the map popup uses a compact layout and a compact age
+            final boolean compact = view.findViewById(R.id.offline_compact_row) != null;
+            offlineText.setText(compact ? Formatter.formatStoredAgoCompact(detailedUpdate) : Formatter.formatStoredAgo(detailedUpdate));
             // allow toggling between the relative ("stored ... ago") and the exact date by tapping the text
             offlineText.setTag(Boolean.FALSE);
             offlineText.setClickable(true);
@@ -134,7 +136,7 @@ public class CacheInfoBoxes {
                 offlineText.setTag(showExact);
                 offlineText.setText(showExact
                         ? Formatter.formatStoredExact(detailedUpdate)
-                        : Formatter.formatStoredAgo(detailedUpdate));
+                        : compact ? Formatter.formatStoredAgoCompact(detailedUpdate) : Formatter.formatStoredAgo(detailedUpdate));
             });
 
             offlineStore.setVisibility(View.GONE);

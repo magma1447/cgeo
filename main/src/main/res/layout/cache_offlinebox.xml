@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- stored state and named filter matches; one row: "Stored ~4 h ago" [actions] "Filters: ..." [filter button],
-     the lists below -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -9,104 +7,38 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
+    <View
+        style="@style/separator_horizontal"
+        android:layout_marginTop="9dp"
+        android:layout_marginBottom="9dp" />
+
     <LinearLayout
+        android:id="@+id/cache_offlinebox_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
+        android:baselineAligned="false"
         android:orientation="horizontal">
 
-        <TextView
-                    android:id="@+id/offline_text"
-                    android:layout_width="wrap_content"
-                    android:maxLines="2"
-                    tools:text="@string/cache_offline_not_ready"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="6dip"
-                    android:paddingRight="3dip"
-                    android:textIsSelectable="false"
-                    android:textSize="@dimen/textSize_detailsSecondary"
-                    android:textColor="@color/colorText" />
-
         <LinearLayout
-                android:id="@+id/frame_buttons"
-                android:layout_gravity="center_vertical"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <!-- shown instead of edit/refresh/drop when more than one of them applies -->
-                <Button
-                    android:id="@+id/offline_more"
-                    style="@style/button_icon"
-                    app:icon="@drawable/three_dot_vertical"
-                    android:visibility="gone"
-                    android:tooltipText="@string/cache_offline_actions" />
-
-                <Button
-                    android:id="@+id/offline_edit"
-                    style="@style/button_icon"
-                    app:icon="@drawable/ic_menu_manage_list"
-                    android:layout_marginLeft="0dp"
-                    android:visibility="gone"
-                    tools:visibility="visible"
-                    android:tooltipText="@string/menu_lists" />
-
-                <Button
-                    android:id="@+id/offline_refresh"
-                    style="@style/button_icon"
-                    app:icon="@drawable/ic_menu_refresh"
-                    android:layout_marginLeft="0dp"
-                    android:tooltipText="@string/cache_offline_refresh" />
-
-                <Button
-                    android:id="@+id/offline_drop"
-                    style="@style/button_icon"
-                    app:icon="@drawable/ic_menu_delete"
-                    android:layout_marginLeft="0dp"
-                    android:tooltipText="@string/cache_offline_delete" />
-
-                <Button
-                    android:id="@+id/offline_store"
-                    style="@style/button_icon"
-                    app:icon="@drawable/ic_menu_save"
-                    android:layout_marginLeft="0dp"
-                    android:tooltipText="@string/cache_offline_store" />
-            </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/frame_marker"
+            android:id="@+id/frame_texts"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
             <TextView
-                        android:id="@+id/marker_text"
-            android:maxLines="2"
-            android:ellipsize="end"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginLeft="6dip"
-                        android:paddingRight="3dip"
-                        android:textIsSelectable="false"
-                        android:textSize="@dimen/textSize_detailsSecondary"
-                        android:textColor="@color/colorText"
-                        tools:text="Filters: marker 1" />
+                android:id="@+id/offline_text"
+                tools:text="@string/cache_offline_not_ready"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="6dip"
+                android:layout_marginRight="51dip"
+                android:paddingRight="3dip"
+                android:textIsSelectable="false"
+                android:textSize="@dimen/textSize_detailsSecondary"
+                android:textColor="@color/colorText" />
 
-            <Button
-                        android:id="@+id/marker_button"
-                        style="@style/button_icon"
-                        app:icon="@drawable/ic_menu_marker"
-                        android:layout_marginLeft="0dp"
-                        android:visibility="gone"
-                        tools:visibility="visible"
-                        android:tooltipText="@string/named_filter_markers" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <TextView
+            <TextView
                 android:id="@+id/offline_lists"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -116,4 +48,45 @@
                 android:textSize="@dimen/textSize_detailsSecondary"
                 tools:text="list 1, list 2"
                 android:textColor="@color/colorText" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/frame_buttons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/offline_edit"
+            style="@style/button_icon"
+            app:icon="@drawable/ic_menu_manage_list"
+            android:layout_marginLeft="0dp"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:tooltipText="@string/menu_lists" />
+
+        <Button
+            android:id="@+id/offline_refresh"
+            style="@style/button_icon"
+            app:icon="@drawable/ic_menu_refresh"
+            android:layout_marginLeft="0dp"
+            android:tooltipText="@string/cache_offline_refresh" />
+
+        <Button
+            android:id="@+id/offline_drop"
+            style="@style/button_icon"
+            app:icon="@drawable/ic_menu_delete"
+            android:layout_marginLeft="0dp"
+            android:tooltipText="@string/cache_offline_delete" />
+
+        <Button
+            android:id="@+id/offline_store"
+            style="@style/button_icon"
+            app:icon="@drawable/ic_menu_save"
+            android:layout_marginLeft="0dp"
+            android:tooltipText="@string/cache_offline_store" />
+    </LinearLayout>
+
+    </LinearLayout>
 </LinearLayout>
