@@ -2263,6 +2263,8 @@
     <string name="home_storage_offline_logs">Unsent logs</string>
     <string name="home_storage_database">Database: %s</string>
     <string name="cache_difficulty_terrain_short">D / T</string>
+    <string name="cache_last_visited">Last visited</string>
+    <string name="cache_last_visited_found">found: %s</string>
     <string name="cache_offline_actions">Stored cache actions</string>
     <string name="search_bar_hint_settings">Search settings</string>
     <string name="search_index_updated">Search database updated</string>
