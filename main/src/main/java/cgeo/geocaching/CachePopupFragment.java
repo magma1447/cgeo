@@ -15,6 +15,7 @@ import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.speech.SpeechService;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.ui.CacheDetailsCreator;
+import cgeo.geocaching.ui.CompassMiniView;
 import cgeo.geocaching.ui.ViewUtils;
 import cgeo.geocaching.ui.WeakReferenceHandler;
 import cgeo.geocaching.utils.AndroidRxUtils;
@@ -39,6 +40,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -132,7 +134,7 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
             }
 
             final Toolbar toolbar = binding.toolbar.toolbar;
-            toolbar.setTitle(geocode);
+            toolbar.setTitle(TextUtils.coloredCacheText(getActivity(), cache, StringUtils.defaultIfBlank(cache.getName(), geocode)));
             setToolbarBackgroundColor(toolbar, binding.swipeUpIndicator.swipeUpIndicator, cache.getType(), cache.isEnabled());
 
             toolbar.setLogo(MapMarkerUtils.getCacheMarker(getResources(), cache, CacheListType.MAP, Settings.getIconScaleEverywhere()).getDrawable());
@@ -157,7 +159,13 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
             binding.title.setText(TextUtils.coloredCacheText(getActivity(), cache, StringUtils.defaultIfBlank(cache.getName(), "")));
             details.addShareAction(binding.title);
 
-            addCacheDetails(false);
+            addCacheDetails(true);
+            // keep the first row clear of the distance in the top right corner
+            if (binding.detailsList.getChildCount() > 0) {
+                binding.popupNavigation.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+                final View first = binding.detailsList.getChildAt(0);
+                first.setPaddingRelative(first.getPaddingStart(), first.getPaddingTop(), binding.popupNavigation.getMeasuredWidth(), first.getPaddingBottom());
+            }
             // the popup shares the detail rows with the details page, but keeps them tight
             final int rowGap = ViewUtils.dpToPixel(3);
             for (int i = 0; i < binding.detailsList.getChildCount(); i++) {
@@ -201,6 +209,18 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
 
         // cache is loaded. remove progress-popup if any there
         progress.dismiss();
+    }
+
+    @Override
+    @Nullable
+    protected TextView getOwnDistanceView() {
+        return binding == null ? null : binding.popupDistance;
+    }
+
+    @Override
+    @Nullable
+    protected CompassMiniView getOwnCompassView() {
+        return binding == null ? null : binding.popupCompass;
     }
 
     @Override
