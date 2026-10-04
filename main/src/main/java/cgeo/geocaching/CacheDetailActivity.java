@@ -30,6 +30,7 @@ import cgeo.geocaching.databinding.CachedetailImagegalleryPageBinding;
 import cgeo.geocaching.databinding.CachedetailInventoryPageBinding;
 import cgeo.geocaching.databinding.CachedetailStatTileBinding;
 import cgeo.geocaching.databinding.CachedetailWaypointsPageBinding;
+import cgeo.geocaching.enumerations.CacheListType;
 import cgeo.geocaching.enumerations.CacheType;
 import cgeo.geocaching.enumerations.LoadFlags;
 import cgeo.geocaching.enumerations.LoadFlags.RemoveFlag;
@@ -1379,8 +1380,8 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             // Not using colored cache names at this place to have at least one place without any formatting to support visually impaired users
             final TextView cachename = binding.hero.heroName;
             cachename.setText(cache.getName());
-            binding.hero.heroIcon.setImageResource(cache.getType().iconId);
-            binding.hero.heroIcon.setBackgroundTintList(ColorStateList.valueOf(activity.getResources().getColor(cache.getType().typeColor, null)));
+            // the same composed cache marker as in lists and the title bar (type color, ring, status overlays)
+            binding.hero.heroIcon.setImageDrawable(MapMarkerUtils.getCacheMarker(activity.getResources(), cache, CacheListType.OFFLINE, Settings.getIconScaleEverywhere()).getDrawable());
             binding.hero.heroSubtitle.setText(cache.getShortGeocode());
             details.addShareAction(cachename);
             details.addShareAction(binding.hero.heroSubtitle);
