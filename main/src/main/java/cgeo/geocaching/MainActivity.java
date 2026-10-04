@@ -10,6 +10,7 @@ import cgeo.geocaching.connector.gc.GCConnector;
 import cgeo.geocaching.connector.gc.GCConstants;
 import cgeo.geocaching.connector.gc.PocketQueryListActivity;
 import cgeo.geocaching.connector.internal.InternalConnector;
+import cgeo.geocaching.databinding.CachedetailStatTileBinding;
 import cgeo.geocaching.databinding.MainActivityBinding;
 import cgeo.geocaching.downloader.DownloaderUtils;
 import cgeo.geocaching.downloader.PendingDownloadsActivity;
@@ -18,6 +19,7 @@ import cgeo.geocaching.helper.UsefulAppsActivity;
 import cgeo.geocaching.network.Network;
 import cgeo.geocaching.permission.PermissionAction;
 import cgeo.geocaching.permission.PermissionContext;
+import cgeo.geocaching.search.BaseSuggestionsAdapter;
 import cgeo.geocaching.search.GeocacheSuggestionsAdapter;
 import cgeo.geocaching.search.SearchUtils;
 import cgeo.geocaching.sensors.GeoData;
@@ -71,9 +73,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Space;
 import android.widget.TextView;
 
 import androidx.annotation.DrawableRes;
@@ -91,12 +95,15 @@ import java.util.List;
 
 import com.google.android.material.button.MaterialButton;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.functions.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
 public class MainActivity extends AbstractNavigationBarActivity {
+
+    private static final int MAX_QUICKLAUNCH_PER_ROW = 4;
 
     private MainActivityBinding binding;
 
@@ -291,13 +298,7 @@ public class MainActivity extends AbstractNavigationBarActivity {
             init();
             cLog.add("init");
 
-            binding.searchPill.setOnClickListener(v -> {
-                // behave exactly like the search entry of the navigation bar
-                final View searchItem = findViewById(MENU_SEARCH);
-                if (searchItem != null) {
-                    searchItem.performClick();
-                }
-            });
+            initHomeSearch();
             binding.infoNotloggedin.setOnClickListener(v ->
                     SimpleDialog.of(this).setTitle(R.string.warn_notloggedin_title).setMessage(R.string.warn_notloggedin_long).setButtons(SimpleDialog.ButtonTextSet.YES_NO).confirm(() -> SettingsActivity.openForScreen(R.string.preference_screen_services, this)));
 
@@ -409,36 +410,103 @@ public class MainActivity extends AbstractNavigationBarActivity {
         });
     }
 
-    private void prepareQuickLaunchItems() {
-        // labeled tiles sharing the row width equally
-        final int dimMargin = DisplayUtils.getPxFromDp(getResources(), 4.0f, 1.0f);
-        final LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
-        lp.setMargins(dimMargin, 0, dimMargin, 0);
+    /** search field on the home screen: same searchable config and suggestions as the toolbar search */
+    private void initHomeSearch() {
+        final SearchView homeSearch = binding.searchPill;
+        final SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        homeSearch.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        homeSearch.setSuggestionsAdapter(new GeocacheSuggestionsAdapter(this));
+        final AutoCompleteTextView input = homeSearch.findViewById(androidx.appcompat.R.id.search_src_text);
+        if (input != null) {
+            input.setTextColor(getResources().getColor(R.color.colorText, null));
+            input.setHintTextColor(getResources().getColor(R.color.md_on_surface_variant, null));
+        }
+        homeSearch.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(final String s) {
+                homeSearch.clearFocus();
+                return false;
+            }
 
-        final List<Integer> quicklaunchitems = Settings.getInfoItems(R.string.pref_quicklaunchitems, 1);
-        binding.quicklaunchitems.removeAllViews();
-        binding.quicklaunchitems.setVisibility(View.GONE);
-        for (int i : quicklaunchitems) {
+            @Override
+            public boolean onQueryTextChange(final String s) {
+                ((BaseSuggestionsAdapter) homeSearch.getSuggestionsAdapter()).changeQuery(s);
+                return true;
+            }
+        });
+        homeSearch.setOnSuggestionListener(new SearchView.OnSuggestionListener() {
+            @Override
+            public boolean onSuggestionSelect(final int position) {
+                return false;
+            }
+
+            @Override
+            public boolean onSuggestionClick(final int position) {
+                // delayed, as changing the query right away changes the adapter's cursor (see #11803)
+                homeSearch.postDelayed(() -> {
+                    homeSearch.setQuery("", false);
+                    homeSearch.clearFocus();
+                }, 1000);
+                return false;
+            }
+        });
+    }
+
+    private void prepareQuickLaunchItems() {
+        final List<QuickLaunchItem> items = new ArrayList<>();
+        for (int i : Settings.getInfoItems(R.string.pref_quicklaunchitems, 1)) {
             final QuickLaunchItem item = (QuickLaunchItem) QuickLaunchItem.getById(i, QuickLaunchItem.ITEMS);
             if (QuickLaunchItem.conditionsFulfilled(item)) {
-                addButton(item.iconRes, lp, () -> QuickLaunchItem.launchQuickLaunchItem(this, item.getId(), true), LocalizationUtils.getString(item.getTitleResId()), item.viewInitializer);
+                items.add(item);
             }
+        }
+        binding.quicklaunchitems.removeAllViews();
+        binding.quicklaunchitems.setVisibility(items.isEmpty() ? View.GONE : View.VISIBLE);
+        if (items.isEmpty()) {
+            return;
+        }
+
+        // up to MAX_QUICKLAUNCH_PER_ROW labeled tiles per row; more items wrap into balanced rows
+        // (5 -> 3+2, 6 -> 3+3, 7 -> 4+3, ...), all tiles sharing the same width
+        final int rows = (items.size() + MAX_QUICKLAUNCH_PER_ROW - 1) / MAX_QUICKLAUNCH_PER_ROW;
+        final int perRow = (items.size() + rows - 1) / rows;
+        final int rowGap = DisplayUtils.getPxFromDp(getResources(), 8.0f, 1.0f);
+        LinearLayout row = null;
+        for (int n = 0; n < items.size(); n++) {
+            if (n % perRow == 0) {
+                row = new LinearLayout(this);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                final LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                rowLp.topMargin = n == 0 ? 0 : rowGap;
+                binding.quicklaunchitems.addView(row, rowLp);
+            }
+            final QuickLaunchItem item = items.get(n);
+            addButton(row, item.iconRes, () -> QuickLaunchItem.launchQuickLaunchItem(this, item.getId(), true), LocalizationUtils.getString(item.getTitleResId()), item.viewInitializer);
+        }
+        while (row.getChildCount() < perRow) {
+            row.addView(new Space(this), quickLaunchTileLayoutParams());
         }
     }
 
-    private void addButton(@DrawableRes final int iconRes, final LinearLayout.LayoutParams lp, final Runnable action, final String tooltip, final java.util.function.Consumer<View> viewInitializer) {
+    private LinearLayout.LayoutParams quickLaunchTileLayoutParams() {
+        final int dimMargin = DisplayUtils.getPxFromDp(getResources(), 4.0f, 1.0f);
+        final LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+        lp.setMargins(dimMargin, 0, dimMargin, 0);
+        return lp;
+    }
+
+    private void addButton(final LinearLayout row, @DrawableRes final int iconRes, final Runnable action, final String label, final java.util.function.Consumer<View> viewInitializer) {
         final MaterialButton b = new MaterialButton(this, null, R.attr.quickLaunchButtonStyle);
         b.setIconResource(iconRes);
-        b.setText(tooltip);
-        b.setLayoutParams(lp);
+        b.setText(label);
+        b.setLayoutParams(quickLaunchTileLayoutParams());
         b.setVisibility(View.VISIBLE);
         b.setOnClickListener(view -> action.run());
         if (viewInitializer != null) {
             viewInitializer.accept(b);
         }
-        TooltipCompat.setTooltipText(b, tooltip);
-        binding.quicklaunchitems.addView(b);
-        binding.quicklaunchitems.setVisibility(View.VISIBLE);
+        TooltipCompat.setTooltipText(b, label);
+        row.addView(b);
     }
 
     private void init() {
@@ -562,6 +630,8 @@ public class MainActivity extends AbstractNavigationBarActivity {
             searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
             searchView.setSuggestionsAdapter(new GeocacheSuggestionsAdapter(this));
             SearchUtils.setSearchViewColor(searchView);
+            // the home screen has its own search field
+            searchItem.setVisible(false);
 
             // initialize menu items
             DownloaderUtils.addManageOfflineDataMenu(this, menu.findItem(R.id.menu_manage_offline_data));
@@ -633,13 +703,21 @@ public class MainActivity extends AbstractNavigationBarActivity {
     }
 
     public void updateCacheCounter() {
-        resumeDisposables.add(AndroidRxUtils.bindActivity(this, DataStore.getAllCachesCountObservable()).subscribe(countOfflineCaches -> {
-            final TextView counter = findViewById(R.id.offline_counter);
-            counter.setVisibility(countOfflineCaches > 0 ? View.VISIBLE : View.GONE);
-            if (countOfflineCaches > 0) {
-                counter.setText(LocalizationUtils.getPlural(R.plurals.caches_stored_offline, countOfflineCaches));
-            }
+        // storage card: a few COUNT(*) queries and a file size, done in the background
+        final Single<int[]> storageStats = DataStore.getAllCachesCountObservable().map(caches -> new int[] {
+                caches, DataStore.getListCount(), DataStore.getOfflineLogCount() });
+        resumeDisposables.add(AndroidRxUtils.bindActivity(this, storageStats).subscribe(stats -> {
+            binding.storageCard.setVisibility(View.VISIBLE);
+            setStorageTile(binding.storageCaches, R.string.home_storage_caches, stats[0]);
+            setStorageTile(binding.storageLists, R.string.home_storage_lists, stats[1]);
+            setStorageTile(binding.storageOfflineLogs, R.string.home_storage_offline_logs, stats[2]);
+            binding.storageDatabase.setText(LocalizationUtils.getString(R.string.home_storage_database, Formatter.formatBytes(DataStore.databasePath().length())));
         }, throwable -> Log.e("Unable to add cache count", throwable)));
+    }
+
+    private static void setStorageTile(@NonNull final CachedetailStatTileBinding tile, @StringRes final int label, final int value) {
+        tile.statValue.setText(String.valueOf(value));
+        tile.statLabel.setText(label);
     }
 
     @Override

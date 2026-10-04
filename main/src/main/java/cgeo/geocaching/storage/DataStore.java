@@ -5136,6 +5136,16 @@ public class DataStore {
         return withAccessLock(() -> (int) PreparedStatement.COUNT_ALL_CACHES.simpleQueryForLong());
     }
 
+    /** number of lists, including the standard list */
+    public static int getListCount() {
+        return withAccessLock(() -> 1 + (int) PreparedStatement.COUNT_LISTS.simpleQueryForLong());
+    }
+
+    /** number of logs saved locally and not yet sent */
+    public static int getOfflineLogCount() {
+        return withAccessLock(() -> (int) PreparedStatement.COUNT_OFFLINE_LOGS.simpleQueryForLong());
+    }
+
     /**
      * Count all caches in the background.
      *
@@ -5706,6 +5716,8 @@ public class DataStore {
         OFFLINE_LOG_ID_OF_GEOCODE("SELECT _id FROM " + dbTableLogsOffline + " WHERE geocode = ?"),
         COUNT_CACHES_ON_STANDARD_LIST("SELECT COUNT(geocode) FROM " + dbTableCachesLists + " WHERE list_id = " + StoredList.STANDARD_LIST_ID),
         COUNT_ALL_CACHES("SELECT COUNT(DISTINCT(geocode)) FROM " + dbTableCachesLists + " WHERE list_id >= " + StoredList.STANDARD_LIST_ID),
+        COUNT_LISTS("SELECT COUNT(*) FROM " + dbTableLists),
+        COUNT_OFFLINE_LOGS("SELECT COUNT(*) FROM " + dbTableLogsOffline),
         INSERT_LOG("INSERT INTO " + dbTableLogs + " (geocode, updated, service_log_id, type, author, author_guid, log, date, found, friend, favorite) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"),
         CLEAN_LOG("DELETE FROM " + dbTableLogs + " WHERE geocode = ? AND date >= ? AND date <= ? AND type = ? AND author = ?"),
         INSERT_ATTRIBUTE("INSERT INTO " + dbTableAttributes + " (geocode, updated, attribute) VALUES (?, ?, ?)"),

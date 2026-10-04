@@ -93,11 +93,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical" >
 
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
-
             <RelativeLayout
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content" >
@@ -142,11 +137,6 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
-
             <RelativeLayout
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content" >
@@ -182,11 +172,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone">
-
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
 
             <RelativeLayout
                 android:layout_width="fill_parent"
@@ -227,11 +212,6 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
-
             <RelativeLayout
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content" >
@@ -270,11 +250,6 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical" >
-
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
 
             <RelativeLayout
                 android:layout_width="fill_parent"

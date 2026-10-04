@@ -232,6 +232,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
 
     // some views that must be available from everywhere // TODO: Reference can block GC?
     private TextView cacheDistanceView;
+    private CompassMiniView heroCompass;
 
     private ImageGalleryView imageGallery;
     private int imageGalleryPos = -1;
@@ -332,7 +333,8 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         }
 
         // If we open this cache from a search, let's properly initialize the title bar, even if we don't have cache details
-        setCacheTitleBar(geocode, name);
+        // the details page shows the full name, so the title bar shows the geocode only
+        setCacheTitleBar(geocode, null);
 
         final LoadCacheHandler loadCacheHandler = new LoadCacheHandler(this, progress);
 
@@ -904,7 +906,10 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             }
             if (activity.cache != null && activity.cache.getCoords() != null) {
                 activity.cacheDistanceView.setText(Units.getDistanceFromKilometers(newGeo.getCoords().distanceTo(activity.cache.getCoords())));
-                activity.cacheDistanceView.bringToFront();
+                if (activity.heroCompass != null) {
+                    activity.heroCompass.updateCurrentCoords(newGeo.getCoords());
+                    activity.heroCompass.updateAzimuth(AngleUtils.getDirectionNow(newDirection));
+                }
             }
             if (activity.getUseLiveCompassInNavigationAction()) {
                 if (activity.compassMiniView != null && activity.compassMiniView == activity.findViewById(R.id.compass_action)) {
@@ -1015,7 +1020,15 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         // allow cache to notify CacheDetailActivity when it changes so it can be reloaded
         cache.setChangeNotificationHandler(new ChangeNotificationHandler(this));
 
-        setCacheTitleBar(cache);
+        // the details page shows the full name, so the title bar shows the geocode only (long press shares it)
+        setCacheTitleBar(cache, cache.getShortGeocode());
+        final View toolbar = getActionBarView();
+        if (toolbar != null) {
+            toolbar.setOnLongClickListener(v -> {
+                ShareUtils.sharePlainText(this, cache.getShortGeocode());
+                return true;
+            });
+        }
         setIsContentRefreshable(cache.supportsRefresh());
 
         // reset imagesList so Images view page will be redrawn
@@ -1306,7 +1319,6 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
      */
     public static class DetailsViewCreator extends TabbedViewPagerFragment<CachedetailDetailsPageBinding> {
         private static final String STATE_COORDINATE_FORMAT_POSITION = "coordinateFormatPosition";
-        private CacheDetailsCreator.NameValueLine favoriteLine;
         private Geocache cache;
         private int coordinateFormatPosition = 0;
 
@@ -1336,7 +1348,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
 
         @NonNull
         private static String formatRating(final float rating) {
-            return String.format(Locale.getDefault(), "%.1f", rating);
+            return rating > 0 ? String.format(Locale.getDefault(), "%.1f", rating) : "–";
         }
 
         @Override
@@ -1368,11 +1380,9 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             cachename.setText(cache.getName());
             binding.hero.heroIcon.setImageResource(cache.getType().iconId);
             binding.hero.heroIcon.setBackgroundTintList(ColorStateList.valueOf(activity.getResources().getColor(cache.getType().typeColor, null)));
-            binding.hero.heroSubtitle.setText(cache.getShortGeocode() + " · " + cache.getType().getL10n());
+            binding.hero.heroSubtitle.setText(cache.getType().getL10n());
             details.addShareAction(cachename);
-            details.addShareAction(binding.hero.heroSubtitle);
-            setStatTile(binding.hero.statDifficulty, R.string.cache_difficulty, cache.getDifficulty() > 0 ? formatRating(cache.getDifficulty()) : "–");
-            setStatTile(binding.hero.statTerrain, R.string.cache_terrain, cache.getTerrain() > 0 ? formatRating(cache.getTerrain()) : "–");
+            setStatTile(binding.hero.statDifficultyTerrain, R.string.cache_difficulty_terrain_short, formatRating(cache.getDifficulty()) + " / " + formatRating(cache.getTerrain()));
             setStatTile(binding.hero.statSize, R.string.cache_size, cache.getSize().getL10n());
             setStatTile(binding.hero.statFavorites, R.string.caches_sort_favorites, cache.getFavoritePoints() > 0 ? String.valueOf(cache.getFavoritePoints()) : "–");
             if (cache.supportsNamechange()) {
@@ -1389,12 +1399,23 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             }
             details.addCacheState(cache);
 
-            activity.cacheDistanceView = details.addDistance(cache, activity.cacheDistanceView);
+            // live distance and direction, updated by CacheDetailsGeoDirHandler
+            final TextView heroDistance = binding.hero.heroDistance;
+            if (cache.getDistance() != null) {
+                heroDistance.setText(Units.getDistanceFromKilometers(cache.getDistance()));
+            } else if (activity.cacheDistanceView != null) {
+                heroDistance.setText(activity.cacheDistanceView.getText());
+            } else {
+                heroDistance.setText("--");
+            }
+            activity.cacheDistanceView = heroDistance;
+            activity.heroCompass = binding.hero.heroCompass;
+            activity.heroCompass.setTargetCoords(cache.getCoords());
+            binding.hero.heroNavigation.setOnClickListener(v -> CompassActivity.startActivityCache(activity, cache));
 
             details.addRating(cache);
 
-            // favorite count
-            favoriteLine = details.add(R.string.cache_favorite, "");
+            // favorite count: shown in the header tile, see updateFavPointBox
 
             details.addBetterCacher(cache);
 
@@ -1685,17 +1706,14 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
          */
         private void updateFavPointBox() {
             final int favCount = cache.getFavoritePoints();
-            if (favCount < 0 || cache.isEventCache()) {
-                favoriteLine.layout.setVisibility(View.GONE);
-            } else {
-                favoriteLine.layout.setVisibility(View.VISIBLE);
-
+            if (favCount >= 0 && !cache.isEventCache()) {
                 final int findsCount = cache.getFindsCount();
-                if (findsCount <= 0) {
-                    favoriteLine.valueView.setText(LocalizationUtils.getPlainString(R.string.favorite_count, favCount));
-                } else {
-                    favoriteLine.valueView.setText(LocalizationUtils.getPlainString(R.string.favorite_count_percent, favCount, Math.min((float) (favCount * 100) / findsCount, 100.0f)));
-                }
+                binding.hero.statFavorites.statValue.setText(String.valueOf(favCount));
+                binding.hero.statFavorites.statLabel.setText(findsCount > 0
+                        ? String.format(Locale.getDefault(), "%s · %.0f%%", LocalizationUtils.getString(R.string.caches_sort_favorites), Math.min((float) (favCount * 100) / findsCount, 100.0f))
+                        : LocalizationUtils.getString(R.string.caches_sort_favorites));
+            } else {
+                setStatTile(binding.hero.statFavorites, R.string.caches_sort_favorites, "–");
             }
 
             if (!cache.supportsFavoritePoints() || !cache.isFound()) {

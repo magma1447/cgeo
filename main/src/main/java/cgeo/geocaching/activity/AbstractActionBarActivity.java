@@ -230,7 +230,14 @@ public class AbstractActionBarActivity extends AbstractActivity {
      * change the titlebar icon and text to show the current geocache
      */
     protected void setCacheTitleBar(@NonNull final Geocache cache) {
-        setTitle(TextUtils.coloredCacheText(this, cache, cache.getName() + " (" + cache.getShortGeocode() + ")"));
+        setCacheTitleBar(cache, cache.getName() + " (" + cache.getShortGeocode() + ")");
+    }
+
+    /**
+     * change the titlebar icon and text to show the current geocache, using the given text as title
+     */
+    protected void setCacheTitleBar(@NonNull final Geocache cache, @NonNull final String title) {
+        setTitle(TextUtils.coloredCacheText(this, cache, title));
         setCacheTitleBarBackground(cache.getType(), cache.isEnabled());
 
         final ActionBar actionBar = getSupportActionBar();

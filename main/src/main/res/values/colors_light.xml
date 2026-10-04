@@ -41,6 +41,14 @@
     <color name="osm_zoomcontrol">@color/md_on_surface_variant</color>
     <color name="osm_zoomcontrolbackground">@color/md_surface_container_low</color>
 
+    <!-- favorite points heart -->
+    <color name="favorite_heart">#FFD32F5B</color>
+
+    <!-- favorite heart colored by rating -->
+    <color name="favorite_badge_green_strong">#FF2E7D32</color>
+    <color name="favorite_badge_orange_strong">#FFE65100</color>
+    <color name="favorite_badge_red_strong">#FFC62828</color>
+
     <!-- favorite count badges in cache lists -->
     <color name="favorite_badge_green">#FFB9E2BA</color>
     <color name="favorite_badge_orange">#FFFFD9A0</color>
