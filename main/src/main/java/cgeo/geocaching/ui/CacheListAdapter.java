@@ -30,6 +30,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.text.Layout;
+import android.text.SpannableStringBuilder;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -529,20 +530,15 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
             }
         }
 
-        // favorite points as "<heart> N (P%)", the percentage of finds only when the find count is known
+        // favorite points as "<heart> N"
         final int favCount = cache.getFavoritePoints();
         holder.binding.favorite.setVisibility(favCount >= 0 ? View.VISIBLE : View.GONE);
-        if (favCount >= 0) {
-            final int findsCount = cache.getFindsCount();
-            holder.binding.favorite.setText(findsCount > 0
-                    ? String.format(Locale.getDefault(), "%s (%.0f%%)", Formatter.formatFavCount(favCount), Math.min(favCount * 100f / findsCount, 100f))
-                    : Formatter.formatFavCount(favCount));
-        }
+        holder.binding.favorite.setText(Formatter.formatFavCount(favCount));
 
         if (isHistory() && cache.getVisitedDate() > 0) {
             holder.binding.info.setText(Formatter.formatCacheInfoHistory(cache));
         } else {
-            holder.binding.info.setText(Formatter.formatCacheInfoLong(cache, storedLists, currentListTitle));
+            holder.binding.info.setText(keepInfoItemsTogether(Formatter.formatCacheInfoLong(cache, storedLists, currentListTitle)));
         }
 
         return v;
@@ -577,6 +573,19 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
                 // NOPMD - Early return is appropriate for null check on WeakReference
             }
         }
+    }
+
+    /** let the info line wrap only after a " · " separator, never inside an item like "D 1.5" */
+    @NonNull
+    private static CharSequence keepInfoItemsTogether(@NonNull final CharSequence info) {
+        final SpannableStringBuilder result = new SpannableStringBuilder(info);
+        for (int i = 0; i < result.length(); i++) {
+            // the only breakable space is the one after a separator dot
+            if (result.charAt(i) == ' ' && (i == 0 || result.charAt(i - 1) != '·')) {
+                result.replace(i, i + 1, "\u00A0");
+            }
+        }
+        return result;
     }
 
     /** how far a name extends beyond its view, i.e. how far it can be scrolled */
