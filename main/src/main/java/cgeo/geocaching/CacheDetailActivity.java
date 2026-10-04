@@ -1742,11 +1742,8 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         private void updateFavPointBox() {
             final int favCount = cache.getFavoritePoints();
             if (favCount >= 0 && !cache.isEventCache()) {
-                final int findsCount = cache.getFindsCount();
-                binding.hero.statFavorites.statValue.setText(String.valueOf(favCount));
-                binding.hero.statFavorites.statLabel.setText(findsCount > 0
-                        ? String.format(Locale.getDefault(), "%s · %.0f%%", LocalizationUtils.getString(R.string.caches_sort_favorites), Math.min((float) (favCount * 100) / findsCount, 100.0f))
-                        : LocalizationUtils.getString(R.string.caches_sort_favorites));
+                // no percentage: c:geo divides by all found logs, which is not geocaching.com's favorite percentage
+                setStatTile(binding.hero.statFavorites, R.string.caches_sort_favorites, String.valueOf(favCount));
             } else {
                 setStatTile(binding.hero.statFavorites, R.string.caches_sort_favorites, "–");
             }
