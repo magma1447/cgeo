@@ -5,8 +5,8 @@
     android:id="@+id/toolbar"
     android:theme="@style/tool_bar"
     android:layout_width="match_parent"
-    android:layout_height="48dp"
-    android:minHeight="48dp"
+    android:layout_height="36dp"
+    android:minHeight="36dp"
     android:background="@color/colorBackgroundActionBar"
-    app:titleTextAppearance="@style/TextAppearance.Material3.TitleMedium"
+    app:titleTextAppearance="@style/popup_toolbar_title"
     app:contentInsetStart="8dp" />

@@ -185,6 +185,11 @@
         <item name="android:padding">3dip</item>
     </style>
 
+    <!-- title of the map popups' toolbar -->
+    <style name="popup_toolbar_title" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">18sp</item>
+    </style>
+
     <!-- "More details" in the map popup: full width as before, but lower -->
     <style name="button_popup_more" parent="Widget.Material3.Button.TonalButton">
         <item name="android:layout_width">match_parent</item>
