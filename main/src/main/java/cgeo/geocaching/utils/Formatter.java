@@ -130,6 +130,11 @@ public final class Formatter {
         return new SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(date);
     }
 
+    @NonNull
+    public static String formatDateYYYYMMDD(final long date) {
+        return new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date);
+    }
+
     /**
      * Generate a numeric date string with date format "yyyy-MM-dd HH-mm"
      *
@@ -270,6 +275,11 @@ public final class Formatter {
                 final Date hiddenDate = cache.getHiddenDate();
                 if (hiddenDate != null) {
                     infos.add(new SpannableString(formatDateYYYYMM(hiddenDate.getTime())));
+                }
+            } else if (item == CacheListInfoItem.VALUES.HIDDEN_DATE.id) {
+                final Date hiddenDate = cache.getHiddenDate();
+                if (hiddenDate != null) {
+                    infos.add(new SpannableString(formatDateYYYYMMDD(hiddenDate.getTime())));
                 }
             } else if (item == CacheListInfoItem.VALUES.RECENT_LOGS.id) {
                 final List<LogEntry> logs = cache.getLogs();

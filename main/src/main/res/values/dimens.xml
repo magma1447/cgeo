@@ -67,4 +67,5 @@
     <dimen name="emoji_picker_emoji_size">44dp</dimen>
     <dimen name="emoji_picker_title_height">56dp</dimen>
 
+    <dimen name="cacheList_distanceColumn">64dp</dimen>
 </resources>
