@@ -10,7 +10,7 @@
 
     <TextView
         android:id="@+id/name"
-        android:layout_width="96sp"
+        android:layout_width="108sp"
         android:layout_height="wrap_content"
         android:layout_gravity="left|top"
         android:layout_marginRight="8dip"
