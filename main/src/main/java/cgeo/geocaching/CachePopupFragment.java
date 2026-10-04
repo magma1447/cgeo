@@ -158,6 +158,14 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
             details.addShareAction(binding.title);
 
             addCacheDetails(false);
+            // the popup shares the detail rows with the details page, but keeps them tight
+            final int rowGap = ViewUtils.dpToPixel(3);
+            for (int i = 0; i < binding.detailsList.getChildCount(); i++) {
+                final View row = binding.detailsList.getChildAt(i);
+                if (row.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+                    ((ViewGroup.MarginLayoutParams) row.getLayoutParams()).bottomMargin = rowGap;
+                }
+            }
 
             binding.editPersonalnote.setVisibility(View.VISIBLE);
             binding.editPersonalnote.setOnClickListener(arg0 -> {

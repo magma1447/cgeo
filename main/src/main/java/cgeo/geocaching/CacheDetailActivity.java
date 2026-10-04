@@ -725,8 +725,9 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         final boolean isUDC = null != connector && connector.equals(InternalConnector.getInstance());
 
         CacheMenuHandler.onPrepareOptionsMenu(menu, cache, false);
-        // the navigation card in the details header replaces the default navigation button
+        // the navigation card in the details header replaces both navigation buttons
         menu.findItem(R.id.menu_default_navigation).setVisible(false);
+        menu.findItem(R.id.menu_navigate).setVisible(false);
         LoggingUI.onPrepareOptionsMenu(menu, cache);
         MenuUtils.setVisible(menu.findItem(R.id.menu_set_coordinates), isUDC);
         MenuUtils.setVisible(menu.findItem(R.id.menu_translate), cache != null && TranslationUtils.isEnabled());
@@ -1413,6 +1414,8 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             });
             binding.hero.heroNavigationIcon.setImageResource(NavigationAppFactory.isDefaultNavigationCompass()
                     ? R.drawable.ic_menu_compass : R.drawable.ic_menu_navigate);
+            binding.hero.heroNavigationIcon.setOnClickListener(v -> activity.startDefaultNavigation());
+            binding.hero.heroNavigationChoose.setOnClickListener(v -> activity.showNavigationMenu());
 
             details.addRating(cache);
 

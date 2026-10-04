@@ -68,7 +68,7 @@
         android:orientation="horizontal"
         android:paddingVertical="8dp"
         android:paddingStart="8dp"
-        android:paddingEnd="20dp">
+        android:paddingEnd="8dp">
 
         <cgeo.geocaching.ui.CompassMiniView
             android:id="@+id/hero_compass"
@@ -89,12 +89,23 @@
             android:textColor="@color/colorText"
             tools:text="491 ft" />
 
-        <ImageView
+        <!-- default navigation (also on tapping the card), then the choice of navigation apps -->
+        <ImageButton
             android:id="@+id/hero_navigation_icon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/cache_menu_navigate"
             android:src="@drawable/ic_menu_compass"
+            app:tint="@color/md_primary" />
+
+        <ImageButton
+            android:id="@+id/hero_navigation_choose"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cache_menu_navigate"
+            android:src="@drawable/ic_menu_navigate"
             app:tint="@color/md_primary" />
     </LinearLayout>
 
