@@ -1683,7 +1683,19 @@
 
     <string name="cache_offline_store">Store</string>
     <string name="cache_offline_stored_ago">Stored %s</string>
-    <string name="cache_offline_stored_ago_short">Stored ~%s ago</string>
+    <string name="cache_offline_stored_ago_short">Stored ~%s ago in</string>
+    <string name="popup_filters_matches">Matches</string>
+    <string name="popup_filters_none">Matches no filters</string>
+    <string name="popup_lists_title">Lists</string>
+    <string name="popup_filters_title">Matching filters</string>
+    <plurals name="popup_list_count">
+        <item quantity="one">%d list</item>
+        <item quantity="other">%d lists</item>
+    </plurals>
+    <plurals name="popup_filter_count">
+        <item quantity="one">%d filter</item>
+        <item quantity="other">%d filters</item>
+    </plurals>
     <string name="cache_offline_not_ready">Not available offline</string>
     <string name="cache_offline_time_mins_few">a few minutes ago</string>
     <plurals name="cache_offline_about_time_mins">

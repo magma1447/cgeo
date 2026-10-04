@@ -14,5 +14,5 @@
         android:scaleType="center"
         app:srcCompat="@drawable/mtrl_bottomsheet_drag_handle"
         app:tint="@color/colorTextHintActionBar"
-        android:minHeight="10dp" />
+        android:minHeight="8dp" />
 </FrameLayout>

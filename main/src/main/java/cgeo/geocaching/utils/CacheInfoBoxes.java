@@ -20,6 +20,7 @@ import cgeo.geocaching.network.Network;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.settings.SettingsActivity;
 import cgeo.geocaching.storage.DataStore;
+import cgeo.geocaching.ui.SimpleItemListModel;
 import cgeo.geocaching.ui.TextParam;
 import cgeo.geocaching.ui.ViewUtils;
 import cgeo.geocaching.ui.dialog.SimpleDialog;
@@ -262,6 +263,10 @@ public class CacheInfoBoxes {
     }
 
     public static void updateCacheListsAndMatchingFilters(final View view, final Geocache cache, @Nullable final CacheDetailActivity cacheDetailActivity) {
+        if (view.findViewById(R.id.offline_compact_row) != null) {
+            updateCompactListsAndMatchingFilters(view, cache);
+            return;
+        }
         final SpannableStringBuilder builder = new SpannableStringBuilder();
 
         // only display "Lists: ..." if the cache is actually stored offline (i.e. part of at least one list)
@@ -361,6 +366,107 @@ public class CacheInfoBoxes {
         if (inactive) {
             builder.setSpan(new ForegroundColorSpan(ContextCompat.getColor(CgeoApplication.getInstance(), R.color.colorTextHint)), start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
+    }
+
+    /**
+     * Map popup variant: "Stored + N lists" (or the only list's name, or "N lists") and "Matches N filters",
+     * where the counts open a chooser. Keeps both texts short and finger-sized.
+     */
+    private static void updateCompactListsAndMatchingFilters(final View view, final Geocache cache) {
+        final Context context = view.getContext();
+
+        // lists
+        final TextView offlineLists = view.findViewById(R.id.offline_lists);
+        final SpannableStringBuilder lists = new SpannableStringBuilder();
+        if (cache.isOffline()) {
+            final List<Integer> listIds = new ArrayList<>(cache.getLists());
+            if (listIds.remove(Integer.valueOf(StoredList.STANDARD_LIST_ID))) {
+                appendClickable(lists, DataStore.getList(StoredList.STANDARD_LIST_ID).getTitle(), () -> openList(context, StoredList.STANDARD_LIST_ID));
+                if (!listIds.isEmpty()) {
+                    lists.append(" + ");
+                    appendClickable(lists, LocalizationUtils.getPlural(R.plurals.popup_list_count, listIds.size()), () -> chooseList(context, listIds));
+                }
+            } else if (listIds.size() == 1) {
+                final int listId = listIds.get(0);
+                appendClickable(lists, DataStore.getList(listId).getTitle(), () -> openList(context, listId));
+            } else if (!listIds.isEmpty()) {
+                appendClickable(lists, LocalizationUtils.getPlural(R.plurals.popup_list_count, listIds.size()), () -> chooseList(context, listIds));
+            }
+        }
+        offlineLists.setText(lists);
+        offlineLists.setMovementMethod(LinkMovementMethod.getInstance());
+        offlineLists.setVisibility(lists.length() > 0 ? View.VISIBLE : View.GONE);
+
+        // matching named filters
+        final View marker = view.findViewById(R.id.marker_button);
+        final TextView matching = view.findViewById(R.id.marker_text);
+        final Settings.NamedFilterDisplayMode mode = Settings.getNamedFilterDisplayMode();
+        final boolean showFilters = mode != Settings.NamedFilterDisplayMode.NONE;
+        if (marker != null) {
+            marker.setVisibility(showFilters ? View.VISIBLE : View.GONE);
+            if (showFilters) {
+                FilterUtils.registerFilterActivateDeactivateButton(context, marker);
+            }
+        }
+        final View divider = view.findViewById(R.id.offline_filters_divider);
+        if (divider != null) {
+            divider.setVisibility(showFilters ? View.VISIBLE : View.GONE);
+        }
+        if (matching == null) {
+            return;
+        }
+        if (!showFilters) {
+            matching.setVisibility(View.GONE);
+            return;
+        }
+        final ImmutablePair<List<NamedFilter>, List<NamedFilter>> matches = NamedFilter.getFiltersMatchingCache(cache, mode == Settings.NamedFilterDisplayMode.ACTIVE_ONLY, -1);
+        final List<NamedFilter> filters = new ArrayList<>(matches.left);
+        filters.addAll(matches.right);
+        final SpannableStringBuilder text = new SpannableStringBuilder();
+        if (filters.isEmpty()) {
+            text.append(LocalizationUtils.getString(R.string.popup_filters_none));
+        } else {
+            text.append(LocalizationUtils.getString(R.string.popup_filters_matches)).append(" ");
+            appendClickable(text, LocalizationUtils.getPlural(R.plurals.popup_filter_count, filters.size()), () -> chooseFilter(context, filters));
+        }
+        matching.setText(text);
+        matching.setMovementMethod(LinkMovementMethod.getInstance());
+        matching.setVisibility(View.VISIBLE);
+    }
+
+    private static void appendClickable(final SpannableStringBuilder builder, final String text, final Runnable action) {
+        final int start = builder.length();
+        builder.append(text);
+        builder.setSpan(new ClickableSpan() {
+            @Override
+            public void onClick(@NonNull final View widget) {
+                action.run();
+            }
+        }, start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    }
+
+    private static void openList(final Context context, final int listId) {
+        Settings.setLastDisplayedList(listId);
+        CacheListActivity.startActivityOffline(context, null);
+    }
+
+    private static void chooseList(final Context context, final List<Integer> listIds) {
+        final SimpleDialog.ItemSelectModel<Integer> model = new SimpleDialog.ItemSelectModel<>();
+        model.setItems(listIds)
+                .setDisplayMapper(id -> TextParam.text(DataStore.getList(id).getTitle()))
+                .setChoiceMode(SimpleItemListModel.ChoiceMode.SINGLE_PLAIN);
+        SimpleDialog.ofContext(context).setTitle(TextParam.id(R.string.popup_lists_title)).selectSingle(model, id -> openList(context, id));
+    }
+
+    private static void chooseFilter(final Context context, final List<NamedFilter> filters) {
+        final SimpleDialog.ItemSelectModel<NamedFilter> model = new SimpleDialog.ItemSelectModel<>();
+        model.setItems(filters)
+                .setDisplayMapper(f -> TextParam.text(StringUtils.isNotBlank(f.getMarkerId()) ? f.getMarkerId() + " " + f.getName() : f.getName()))
+                .setChoiceMode(SimpleItemListModel.ChoiceMode.SINGLE_PLAIN);
+        SimpleDialog.ofContext(context).setTitle(TextParam.id(R.string.popup_filters_title)).selectSingle(model, filter -> {
+            Settings.setLastDisplayedList(PseudoList.ALL_LIST.id);
+            CacheListActivity.startActivityOffline(context, filter);
+        });
     }
 
     private static void appendClickableList(final SpannableStringBuilder builder, final View view, final Integer listId, @Nullable final CacheDetailActivity cacheDetailActivity) {
