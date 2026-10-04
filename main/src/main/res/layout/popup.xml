@@ -30,21 +30,51 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- the cache name is shown in the toolbar -->
             <TextView
                 android:id="@+id/title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textColor="@color/colorText"
-                android:textSize="@dimen/textSize_headingPrimary" />
+                android:visibility="gone" />
 
-            <View style="@style/separator_horizontal" />
-
-            <LinearLayout
-                android:id="@+id/details_list"
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical" />
+                android:paddingTop="4dp">
+
+                <LinearLayout
+                    android:id="@+id/details_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <!-- distance and direction, top right next to the first row -->
+                <LinearLayout
+                    android:id="@+id/popup_navigation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|end"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingEnd="4dp">
+
+                    <cgeo.geocaching.ui.CompassMiniView
+                        android:id="@+id/popup_compass"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        app:skin="?compass" />
+
+                    <TextView
+                        android:id="@+id/popup_distance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="2dp"
+                        android:fontFeatureSettings="tnum"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                        android:textColor="@color/colorText"
+                        tools:text="0.26 mi" />
+                </LinearLayout>
+            </FrameLayout>
 
             <include layout="@layout/cache_offlinebox" />
 
@@ -75,8 +105,9 @@
 
                 <Button
                     android:id="@+id/more_details"
-                    style="@style/button_full_popups"
-                    android:layout_toLeftOf="@id/buttonbox"
+                    style="@style/button_popup_more"
+                    android:layout_alignParentLeft="true"
+                    android:layout_centerVertical="true"
                     android:text="@string/popup_more" />
                 <LinearLayout
                     android:id="@+id/buttonbox"

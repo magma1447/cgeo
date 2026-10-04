@@ -185,6 +185,17 @@
         <item name="android:padding">3dip</item>
     </style>
 
+    <!-- "More details" in the map popup: a compact tonal button instead of a full-width one -->
+    <style name="button_popup_more" parent="Widget.Material3.Button.TonalButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:layout_marginStart">4dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:minHeight">40dp</item>
+        <item name="android:textSize">@dimen/textSize_detailsSecondary</item>
+    </style>
+
     <style name="button_small_popups" parent="button_small">
         <item name="android:layout_height">@dimen/buttonSize_iconButton</item>
         <item name="android:layout_margin">3dp</item>
@@ -257,6 +268,7 @@
     <!-- bottom navigation / navigation rail: brand orange pill behind the selected item -->
     <style name="navigationBarActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">@color/md_primary_container</item>
+        <item name="android:height">28dp</item>
     </style>
 
     <style name="SqlButton" parent="@style/Widget.MaterialComponents.Button.TextButton.Icon">
