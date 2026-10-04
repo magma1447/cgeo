@@ -748,6 +748,13 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
 
             final MenuItem ttsMenuItem = menu.findItem(R.id.menu_tts_toggle);
             ttsMenuItem.setVisible(!cache.isGotoHistoryUDC());
+            // keep the title bar for the name and the log button; everything else goes to the overflow menu
+            for (int i = 0; i < menu.size(); i++) {
+                final MenuItem item = menu.getItem(i);
+                if (item.getItemId() != R.id.menu_log_visit && item.getItemId() != R.id.menu_log_visit_offline) {
+                    item.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+                }
+            }
             ToggleItemType.TOGGLE_SPEECH.toggleMenuItem(ttsMenuItem, SpeechService.isRunning());
 
             if (connector instanceof PgcChallengeCheckerCapability) {
