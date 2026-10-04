@@ -51,7 +51,7 @@
                 android:layout_marginTop="2dp"
                 android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                 android:textColor="@color/colorTextHint"
-                tools:text="Traditional Cache" />
+                tools:text="GC7XYZ1" />
         </LinearLayout>
     </LinearLayout>
 
@@ -89,12 +89,13 @@
             android:textColor="@color/colorText"
             tools:text="491 ft" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/compass_title"
-            android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
-            android:textColor="@color/md_primary" />
+        <ImageView
+            android:id="@+id/hero_navigation_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:contentDescription="@string/cache_menu_navigate"
+            android:src="@drawable/ic_menu_compass"
+            app:tint="@color/md_primary" />
     </LinearLayout>
 
     <LinearLayout

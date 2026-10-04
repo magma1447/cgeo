@@ -333,8 +333,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         }
 
         // If we open this cache from a search, let's properly initialize the title bar, even if we don't have cache details
-        // the details page shows the full name, so the title bar shows the geocode only
-        setCacheTitleBar(geocode, null);
+        setCacheTitleBar(geocode, name);
 
         final LoadCacheHandler loadCacheHandler = new LoadCacheHandler(this, progress);
 
@@ -726,6 +725,8 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         final boolean isUDC = null != connector && connector.equals(InternalConnector.getInstance());
 
         CacheMenuHandler.onPrepareOptionsMenu(menu, cache, false);
+        // the navigation card in the details header replaces the default navigation button
+        menu.findItem(R.id.menu_default_navigation).setVisible(false);
         LoggingUI.onPrepareOptionsMenu(menu, cache);
         MenuUtils.setVisible(menu.findItem(R.id.menu_set_coordinates), isUDC);
         MenuUtils.setVisible(menu.findItem(R.id.menu_translate), cache != null && TranslationUtils.isEnabled());
@@ -1020,15 +1021,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         // allow cache to notify CacheDetailActivity when it changes so it can be reloaded
         cache.setChangeNotificationHandler(new ChangeNotificationHandler(this));
 
-        // the details page shows the full name, so the title bar shows the geocode only (long press shares it)
-        setCacheTitleBar(cache, cache.getShortGeocode());
-        final View toolbar = getActionBarView();
-        if (toolbar != null) {
-            toolbar.setOnLongClickListener(v -> {
-                ShareUtils.sharePlainText(this, cache.getShortGeocode());
-                return true;
-            });
-        }
+        setCacheTitleBar(cache);
         setIsContentRefreshable(cache.supportsRefresh());
 
         // reset imagesList so Images view page will be redrawn
@@ -1380,8 +1373,10 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             cachename.setText(cache.getName());
             binding.hero.heroIcon.setImageResource(cache.getType().iconId);
             binding.hero.heroIcon.setBackgroundTintList(ColorStateList.valueOf(activity.getResources().getColor(cache.getType().typeColor, null)));
-            binding.hero.heroSubtitle.setText(cache.getType().getL10n());
+            binding.hero.heroSubtitle.setText(cache.getShortGeocode());
             details.addShareAction(cachename);
+            details.addShareAction(binding.hero.heroSubtitle);
+            details.add(R.string.cache_type, cache.getType().getL10n());
             setStatTile(binding.hero.statDifficultyTerrain, R.string.cache_difficulty_terrain_short, formatRating(cache.getDifficulty()) + " / " + formatRating(cache.getTerrain()));
             setStatTile(binding.hero.statSize, R.string.cache_size, cache.getSize().getL10n());
             setStatTile(binding.hero.statFavorites, R.string.caches_sort_favorites, cache.getFavoritePoints() > 0 ? String.valueOf(cache.getFavoritePoints()) : "–");
@@ -1411,7 +1406,13 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             activity.cacheDistanceView = heroDistance;
             activity.heroCompass = binding.hero.heroCompass;
             activity.heroCompass.setTargetCoords(cache.getCoords());
-            binding.hero.heroNavigation.setOnClickListener(v -> CompassActivity.startActivityCache(activity, cache));
+            binding.hero.heroNavigation.setOnClickListener(v -> activity.startDefaultNavigation());
+            binding.hero.heroNavigation.setOnLongClickListener(v -> {
+                activity.startDefaultNavigation2();
+                return true;
+            });
+            binding.hero.heroNavigationIcon.setImageResource(NavigationAppFactory.isDefaultNavigationCompass()
+                    ? R.drawable.ic_menu_compass : R.drawable.ic_menu_navigate);
 
             details.addRating(cache);
 
@@ -1456,6 +1457,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             }
 
             // Latest logs
+            details.addLastVisited(cache);
             details.addLatestLogs(cache);
 
             // cache attributes

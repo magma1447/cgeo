@@ -352,6 +352,11 @@ public final class NavigationAppFactory {
         return getDefaultNavigationApplication(1);
     }
 
+    /** whether the (first) default navigation is c:geo's own compass */
+    public static boolean isDefaultNavigationCompass() {
+        return getDefaultNavigationApplication() == NavigationAppsEnum.COMPASS.app;
+    }
+
     @NonNull
     public static App getNavigationAppForId(final int navigationAppId) {
         final List<NavigationAppsEnum> installedNavigationApps = getInstalledNavigationApps();
