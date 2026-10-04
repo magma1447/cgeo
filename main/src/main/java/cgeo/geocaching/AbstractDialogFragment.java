@@ -144,14 +144,14 @@ public abstract class AbstractDialogFragment extends Fragment implements CacheMe
     protected final void addCacheDetails(final boolean showGeocode) {
         assert cache != null;
 
+        if (showGeocode) {
+            details.add(R.string.cache_geocode, cache.getShortGeocode());
+        }
+
         // cache type
         final String cacheType = cache.getType().getL10n();
         final String cacheSize = cache.showSize() ? " (" + cache.getSize().getL10n() + ")" : "";
         details.add(R.string.cache_type, cacheType + cacheSize);
-
-        if (showGeocode) {
-            details.add(R.string.cache_geocode, cache.getShortGeocode());
-        }
         details.addCacheState(cache);
 
         final TextView ownDistance = getOwnDistanceView();
@@ -227,7 +227,14 @@ public abstract class AbstractDialogFragment extends Fragment implements CacheMe
     private void setAsTarget() {
         final TargetUpdateReceiver activity = (TargetUpdateReceiver) requireActivity();
         activity.onReceiveTargetUpdate(getTargetInfo());
-        ((AbstractNavigationBarMapActivity) requireActivity()).sheetRemoveFragment();
+        if (closeAfterSetAsTarget()) {
+            ((AbstractNavigationBarMapActivity) requireActivity()).sheetRemoveFragment();
+        }
+    }
+
+    /** whether the sheet closes after "set as target" */
+    protected boolean closeAfterSetAsTarget() {
+        return true;
     }
 
     public static void onCreatePopupOptionsMenu(final Toolbar toolbar, final INavigationSource navigationSource, final Geocache geocache) {

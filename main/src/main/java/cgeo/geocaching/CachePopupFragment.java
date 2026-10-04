@@ -34,6 +34,7 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Message;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -153,6 +154,16 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
                 return true;
             });
             onCreatePopupOptionsMenu(toolbar, this, cache);
+            // the distance card starts the default navigation, so the toolbar keeps only "set as target"
+            // and the choice of navigation apps; everything else stays in the overflow menu
+            final Menu menu = toolbar.getMenu();
+            menu.findItem(R.id.menu_default_navigation).setVisible(false);
+            for (int i = 0; i < menu.size(); i++) {
+                final MenuItem menuItem = menu.getItem(i);
+                if (menuItem.getItemId() != R.id.menu_target && menuItem.getItemId() != R.id.menu_navigate) {
+                    menuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+                }
+            }
             toolbar.setOnMenuItemClickListener(this::onPopupOptionsItemSelected);
 
             details = new CacheDetailsCreator(requireActivity(), binding.detailsList);
@@ -160,6 +171,11 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
             details.addShareAction(binding.title);
 
             addCacheDetails(true);
+            binding.popupNavigation.setOnClickListener(v -> startDefaultNavigation());
+            binding.popupNavigation.setOnLongClickListener(v -> {
+                startDefaultNavigation2();
+                return true;
+            });
             // keep the first row clear of the distance in the top right corner
             if (binding.detailsList.getChildCount() > 0) {
                 binding.popupNavigation.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
@@ -209,6 +225,12 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
 
         // cache is loaded. remove progress-popup if any there
         progress.dismiss();
+    }
+
+    @Override
+    protected boolean closeAfterSetAsTarget() {
+        // stay open: setting the target is often followed by choosing a navigation app
+        return false;
     }
 
     @Override
