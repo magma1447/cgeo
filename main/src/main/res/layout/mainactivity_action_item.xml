@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- home screen notice (updates available, missing permission, new messages): Material 3 banner style,
+     icon at the start (set in MainActivity.displayActionItem), text left-aligned, at least two lines high -->
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/action_item_info"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="8dp"
-    android:padding="8dp"
+    android:minHeight="64dp"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="12dp"
     android:background="@drawable/helper_bcg"
-    android:gravity="center"
+    android:drawableStart="@drawable/ic_menu_update"
+    android:drawablePadding="16dp"
+    android:drawableTint="@color/md_primary"
+    android:gravity="start|center_vertical"
+    android:textAlignment="viewStart"
     android:textColor="@color/colorTextMainInfo"
     android:textIsSelectable="false"
     android:textSize="@dimen/textSize_detailsPrimary" />

@@ -796,6 +796,12 @@ public class MainActivity extends AbstractNavigationBarActivity {
             l.setVisibility(View.VISIBLE);
             updateHomeBadge(delta);
             l.setText(info);
+            // icon at the start of the notice, by kind
+            final int icon = layout == R.id.missingLocationPermission ? R.drawable.ic_menu_mylocation_off
+                    : layout == R.id.mcupdate ? R.drawable.ic_menu_email
+                    : layout == R.id.mapupdate ? R.drawable.ic_menu_mapmode
+                    : R.drawable.ic_menu_update;
+            l.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0);
             l.setOnClickListener(v -> {
                 action.call(true);
                 l.setVisibility(View.GONE);
