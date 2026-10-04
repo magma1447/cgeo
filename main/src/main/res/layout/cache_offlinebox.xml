@@ -57,6 +57,14 @@
             android:layout_height="wrap_content"
         android:orientation="horizontal">
 
+        <!-- shown instead of edit/refresh/drop when more than one of them applies -->
+        <Button
+            android:id="@+id/offline_more"
+            style="@style/button_icon"
+            app:icon="@drawable/three_dot_vertical"
+            android:visibility="gone"
+            android:tooltipText="@string/cache_offline_actions" />
+
         <Button
             android:id="@+id/offline_edit"
             style="@style/button_icon"

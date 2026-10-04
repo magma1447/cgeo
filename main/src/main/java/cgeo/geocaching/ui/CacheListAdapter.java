@@ -27,6 +27,7 @@ import cgeo.geocaching.utils.TextUtils;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.view.GestureDetector;
@@ -42,6 +43,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.text.HtmlCompat;
+import androidx.core.widget.TextViewCompat;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -521,10 +523,13 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
             }
         }
 
+        // favorite points as "N <heart>"; the heart takes the rating color when there is a rating
         final int favCount = cache.getFavoritePoints();
+        holder.binding.favorite.setVisibility(favCount >= 0 ? View.VISIBLE : View.INVISIBLE);
         holder.binding.favorite.setText(Formatter.formatFavCount(favCount));
         final float rating = cache.getRating();
-        holder.binding.favorite.setBackgroundResource(rating >= 3.5 ? R.drawable.favorite_background_green : rating >= 2.1 ? R.drawable.favorite_background_orange : rating > 0.0 ? R.drawable.favorite_background_red : R.drawable.favorite_background);
+        final int heartColor = rating >= 3.5 ? R.color.favorite_badge_green_strong : rating >= 2.1 ? R.color.favorite_badge_orange_strong : rating > 0.0 ? R.color.favorite_badge_red_strong : R.color.favorite_heart;
+        TextViewCompat.setCompoundDrawableTintList(holder.binding.favorite, ColorStateList.valueOf(getContext().getResources().getColor(heartColor, null)));
 
         if (isHistory() && cache.getVisitedDate() > 0) {
             holder.binding.info.setText(Formatter.formatCacheInfoHistory(cache));

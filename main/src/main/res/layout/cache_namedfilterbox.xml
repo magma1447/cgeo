@@ -8,10 +8,9 @@
     android:baselineAligned="false"
     android:orientation="vertical">
 
-    <View
-        style="@style/separator_horizontal"
-        android:layout_marginBottom="9dp"
-        android:layout_marginTop="9dp" />
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="9dp" />
 
     <LinearLayout
         android:layout_width="match_parent"

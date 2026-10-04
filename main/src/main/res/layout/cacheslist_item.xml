@@ -51,7 +51,7 @@
         android:orientation="vertical"
         android:layout_weight="2">
 
-        <!-- cache name -->
+        <!-- cache name, full width of the card, single line -->
         <TextView
             android:id="@+id/text"
             android:layout_width="fill_parent"
@@ -59,17 +59,24 @@
             android:layout_gravity="left"
             android:paddingRight="3dip"
             android:paddingTop="5dip"
-            android:scrollHorizontally="true"
+            android:ellipsize="end"
+            android:singleLine="true"
             android:textIsSelectable="false"
             android:textSize="@dimen/textSize_listsPrimary"
             android:textColor="@color/colorText_listsPrimary"
             android:fontFamily="sans-serif-medium"
             tools:text="name" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
         <!-- cache attributes and other info -->
         <TextView
             android:id="@+id/info"
-            android:layout_width="fill_parent"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:layout_gravity="left"
             android:ellipsize="end"
@@ -80,7 +87,6 @@
             android:textSize="@dimen/textSize_listsSecondary"
             android:textColor="@color/colorText_listsSecondary"
             tools:text="terrain, difficulty and others" />
-    </LinearLayout>
 
     <!-- real text based direction and distance -->
     <RelativeLayout
@@ -136,7 +142,8 @@
 
     <!-- inventory and favorites -->
     <RelativeLayout
-        android:layout_width="45dp"
+        android:layout_width="wrap_content"
+        android:minWidth="45dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="1dip"
         android:layout_marginTop="1dip"
@@ -173,12 +180,16 @@
             android:paddingLeft="3dip"
             android:paddingRight="3dip"
             android:paddingBottom="1dip"
+            android:drawablePadding="3dp"
             android:scrollHorizontally="true"
             android:textIsSelectable="false"
             android:textSize="@dimen/textSize_listsSecondary"
             android:textColor="@color/colorText_listsPrimary"
-            android:textStyle="bold"
+            app:drawableStartCompat="@drawable/ic_heart_small"
             tools:text="345" /><!-- explicitly use default text color here -->
     </RelativeLayout>
+
+        </LinearLayout>
+    </LinearLayout>
 
 </LinearLayout>

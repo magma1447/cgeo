@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- header of the cache details page: who/what the cache is, plus its key numbers -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/hero"
     android:layout_width="match_parent"
@@ -50,26 +51,60 @@
                 android:layout_marginTop="2dp"
                 android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                 android:textColor="@color/colorTextHint"
-                tools:text="GC7XYZ1 · Traditional Cache" />
+                tools:text="Traditional Cache" />
         </LinearLayout>
+    </LinearLayout>
+
+    <!-- live distance and direction; opens the compass -->
+    <LinearLayout
+        android:id="@+id/hero_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/search_pill_background"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingVertical="8dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="20dp">
+
+        <cgeo.geocaching.ui.CompassMiniView
+            android:id="@+id/hero_compass"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/hero_compass_background"
+            app:skin="?compass" />
+
+        <TextView
+            android:id="@+id/hero_distance"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp"
+            android:fontFeatureSettings="tnum"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+            android:textColor="@color/colorText"
+            tools:text="491 ft" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/compass_title"
+            android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+            android:textColor="@color/md_primary" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="12dp"
         android:orientation="horizontal">
 
         <include
-            android:id="@+id/stat_difficulty"
-            layout="@layout/cachedetail_stat_tile"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginEnd="8dp" />
-
-        <include
-            android:id="@+id/stat_terrain"
+            android:id="@+id/stat_difficulty_terrain"
             layout="@layout/cachedetail_stat_tile"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

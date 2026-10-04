@@ -5,6 +5,8 @@
     android:id="@+id/mainscreen"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
     tools:context=".MainActivity">
 
     <cgeo.geocaching.wherigo.WherigoInfoBarView
@@ -12,8 +14,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
-    <!-- search pill: opens the search page -->
-    <LinearLayout
+    <!-- search field with geocode/keyword suggestions, replaces the search icon in the toolbar -->
+    <androidx.appcompat.widget.SearchView
         android:id="@+id/search_pill"
         android:layout_width="match_parent"
         android:layout_height="56dp"
@@ -21,27 +23,10 @@
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="12dp"
         android:background="@drawable/search_pill_background"
-        android:clickable="true"
-        android:focusable="true"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="20dp">
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:importantForAccessibility="no"
-            android:src="@drawable/ic_menu_search"
-            app:tint="@color/md_on_surface_variant" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:text="@string/search_bar_hint"
-            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-            android:textColor="@color/md_on_surface_variant" />
-    </LinearLayout>
+        android:paddingStart="4dp"
+        app:iconifiedByDefault="false"
+        app:queryBackground="@android:color/transparent"
+        app:queryHint="@string/search_bar_hint" />
 
     <!-- position card -->
     <LinearLayout
@@ -70,19 +55,69 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp" />
 
+    </LinearLayout>
+
+    <!-- what is stored on the device -->
+    <LinearLayout
+        android:id="@+id/storage_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/location_area"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/section_card"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="12dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
         <TextView
-            android:id="@+id/offline_counter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/stat_tile"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp"
+            android:text="@string/home_storage"
             android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
-            android:textColor="@color/colorText"
-            android:visibility="gone"
-            tools:visibility="visible"
-            tools:text="1234 caches stored offline" />
+            android:textColor="@color/md_primary" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <include
+                android:id="@+id/storage_caches"
+                layout="@layout/cachedetail_stat_tile"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp" />
+
+            <include
+                android:id="@+id/storage_lists"
+                layout="@layout/cachedetail_stat_tile"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp" />
+
+            <include
+                android:id="@+id/storage_offline_logs"
+                layout="@layout/cachedetail_stat_tile"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/storage_database"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+            android:textColor="@color/colorTextHint"
+            tools:text="Database: 208 KB" />
     </LinearLayout>
 
     <androidx.fragment.app.FragmentContainerView
@@ -92,7 +127,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dip"
         android:layout_marginTop="16dp"
-        android:layout_below="@id/location_area"
+        android:layout_below="@id/storage_card"
         tools:layout="@layout/status" />
 
     <LinearLayout
@@ -191,8 +226,7 @@
         android:layout_below="@id/info_notloggedin"
         android:layout_marginHorizontal="12dp"
         android:layout_marginTop="16dp"
-        android:gravity="center_horizontal"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
         <!-- will be filled dynamically with quick launch buttons -->
 

@@ -40,6 +40,7 @@ import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
+import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.GridView;
@@ -47,8 +48,10 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.core.text.HtmlCompat;
+import androidx.core.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -147,6 +150,51 @@ public class CacheInfoBoxes {
             offlineDrop.setVisibility(View.GONE);
             offlineEdit.setVisibility(View.GONE);
         }
+        collapseOfflineActions(view, offlineEdit, offlineRefresh, offlineDrop, moveCacheListener);
+    }
+
+    /**
+     * When more than one of the lists/refresh/delete buttons applies, show a single menu button
+     * instead, so that the "stored ... ago" text gets the room and every row ends in one icon.
+     */
+    private static void collapseOfflineActions(final View view, final View offlineEdit, final View offlineRefresh, final View offlineDrop,
+                                               @Nullable final View.OnLongClickListener moveCacheListener) {
+        final View offlineMore = view.findViewById(R.id.offline_more);
+        if (offlineMore == null) {
+            return;
+        }
+        final List<Pair<Integer, Runnable>> actions = new ArrayList<>();
+        if (offlineEdit.getVisibility() == View.VISIBLE) {
+            actions.add(new Pair<>(R.string.menu_lists, offlineEdit::performClick));
+            if (moveCacheListener != null) {
+                actions.add(new Pair<>(R.string.cache_menu_move_list, () -> moveCacheListener.onLongClick(offlineEdit)));
+            }
+        }
+        if (offlineRefresh.getVisibility() == View.VISIBLE) {
+            actions.add(new Pair<>(R.string.cache_offline_refresh, offlineRefresh::performClick));
+        }
+        if (offlineDrop.getVisibility() == View.VISIBLE) {
+            actions.add(new Pair<>(R.string.cache_offline_delete, offlineDrop::performClick));
+        }
+        if (actions.size() < 2) {
+            offlineMore.setVisibility(View.GONE);
+            return;
+        }
+        offlineEdit.setVisibility(View.GONE);
+        offlineRefresh.setVisibility(View.GONE);
+        offlineDrop.setVisibility(View.GONE);
+        offlineMore.setVisibility(View.VISIBLE);
+        offlineMore.setOnClickListener(v -> {
+            final PopupMenu popup = new PopupMenu(v.getContext(), v);
+            for (int i = 0; i < actions.size(); i++) {
+                popup.getMenu().add(Menu.NONE, i, i, actions.get(i).first);
+            }
+            popup.setOnMenuItemClickListener(item -> {
+                actions.get(item.getItemId()).second.run();
+                return true;
+            });
+            popup.show();
+        });
     }
 
 

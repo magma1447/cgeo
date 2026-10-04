@@ -2257,6 +2257,13 @@
     <string name="geo_search_label">Search caches nearby</string>
     <string name="search_bar_hint">Search caches/trackables</string>
     <string name="home_your_position">Your position</string>
+    <string name="home_storage">Storage</string>
+    <string name="home_storage_caches">Caches</string>
+    <string name="home_storage_lists">Lists</string>
+    <string name="home_storage_offline_logs">Unsent logs</string>
+    <string name="home_storage_database">Database: %s</string>
+    <string name="cache_difficulty_terrain_short">D / T</string>
+    <string name="cache_offline_actions">Stored cache actions</string>
     <string name="search_bar_hint_settings">Search settings</string>
     <string name="search_index_updated">Search database updated</string>
     <string name="search_coordinates">Coordinates</string>
