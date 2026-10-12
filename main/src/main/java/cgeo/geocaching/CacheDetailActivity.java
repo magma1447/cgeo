@@ -1381,6 +1381,19 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             tile.statLabel.setText(label);
         }
 
+        /** favorite points, with the percentage of finds as in the map popup (the value shrinks to fit the tile) */
+        @NonNull
+        private static String formatFavorites(@NonNull final Geocache cache) {
+            final int favCount = cache.getFavoritePoints();
+            if (favCount < 0 || cache.isEventCache()) {
+                return "–";
+            }
+            final int findsCount = cache.getFindsCount();
+            return findsCount > 0
+                    ? LocalizationUtils.getPlainString(R.string.favorite_count_percent, favCount, (float) (favCount * 100) / findsCount)
+                    : String.valueOf(favCount);
+        }
+
         @NonNull
         private static String formatRating(final float rating) {
             return rating > 0 ? String.format(Locale.getDefault(), "%.1f", rating) : "–";
@@ -1421,7 +1434,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             details.add(R.string.cache_type, cache.getType().getL10n());
             setStatTile(binding.hero.statDifficultyTerrain, R.string.cache_difficulty_terrain_short, formatRating(cache.getDifficulty()) + " / " + formatRating(cache.getTerrain()));
             setStatTile(binding.hero.statSize, R.string.cache_size, cache.getSize().getL10n());
-            setStatTile(binding.hero.statFavorites, R.string.caches_sort_favorites, cache.getFavoritePoints() > 0 ? String.valueOf(cache.getFavoritePoints()) : "–");
+            setStatTile(binding.hero.statFavorites, R.string.caches_sort_favorites, formatFavorites(cache));
             if (cache.supportsNamechange()) {
                 cachename.setOnClickListener(v -> Dialogs.input(activity, LocalizationUtils.getString(R.string.cache_name_set), cache.getName(), LocalizationUtils.getString(R.string.caches_sort_name), name -> {
                     cachename.setText(name);
@@ -1751,13 +1764,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
          * Show/hide buttons, set text in favorite line and box
          */
         private void updateFavPointBox() {
-            final int favCount = cache.getFavoritePoints();
-            if (favCount >= 0 && !cache.isEventCache()) {
-                // no percentage: c:geo divides by all found logs, which is not geocaching.com's favorite percentage
-                setStatTile(binding.hero.statFavorites, R.string.caches_sort_favorites, String.valueOf(favCount));
-            } else {
-                setStatTile(binding.hero.statFavorites, R.string.caches_sort_favorites, "–");
-            }
+            setStatTile(binding.hero.statFavorites, R.string.caches_sort_favorites, formatFavorites(cache));
 
             if (!cache.supportsFavoritePoints() || !cache.isFound()) {
                 binding.favpointBox.setVisibility(View.GONE);
