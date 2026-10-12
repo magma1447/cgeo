@@ -134,8 +134,10 @@ import android.os.Handler;
 import android.os.Message;
 import android.text.InputType;
 import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.text.util.Linkify;
 import android.util.Pair;
@@ -1376,22 +1378,30 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             return CachedetailDetailsPageBinding.inflate(inflater, container, false);
         }
 
-        private static void setStatTile(@NonNull final CachedetailStatTileBinding tile, @StringRes final int label, @NonNull final String value) {
+        private static void setStatTile(@NonNull final CachedetailStatTileBinding tile, @StringRes final int label, @NonNull final CharSequence value) {
             tile.statValue.setText(value);
             tile.statLabel.setText(label);
         }
 
-        /** favorite points, with the percentage of finds as in the map popup (the value shrinks to fit the tile) */
+        /**
+         * favorite points, with the percentage of finds as in the map popup. The percentage is smaller, on the
+         * same baseline, so the count keeps the focus; the tile shrinks both together when space runs out.
+         */
         @NonNull
-        private static String formatFavorites(@NonNull final Geocache cache) {
+        private static CharSequence formatFavorites(@NonNull final Geocache cache) {
             final int favCount = cache.getFavoritePoints();
             if (favCount < 0 || cache.isEventCache()) {
                 return "–";
             }
             final int findsCount = cache.getFindsCount();
-            return findsCount > 0
-                    ? LocalizationUtils.getPlainString(R.string.favorite_count_percent, favCount, (float) (favCount * 100) / findsCount)
-                    : String.valueOf(favCount);
+            if (findsCount <= 0) {
+                return String.valueOf(favCount);
+            }
+            final String count = String.valueOf(favCount);
+            final SpannableString text = new SpannableString(LocalizationUtils.getPlainString(R.string.favorite_count_percent, favCount, (float) (favCount * 100) / findsCount));
+            // 55 %: at the tile's full size not smaller than the label below it
+            text.setSpan(new RelativeSizeSpan(0.55f), count.length(), text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            return text;
         }
 
         @NonNull
