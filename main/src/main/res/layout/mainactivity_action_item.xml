@@ -1,19 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- home screen notice (updates available, missing permission, new messages): Material 3 banner style,
-     icon at the start (set in MainActivity.displayActionItem), text left-aligned, at least two lines high -->
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/action_item_info"
+<!-- home screen notice: colored by level (error / info, see MainActivity.displayActionItem),
+     icon at the start, left-aligned text, a visible action and a dismiss button -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/action_item"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:minHeight="64dp"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="12dp"
-    android:background="@drawable/helper_bcg"
-    android:drawableStart="@drawable/ic_menu_update"
-    android:drawablePadding="16dp"
-    android:drawableTint="@color/md_primary"
-    android:gravity="start|center_vertical"
-    android:textAlignment="viewStart"
-    android:textColor="@color/colorTextMainInfo"
-    android:textIsSelectable="false"
-    android:textSize="@dimen/textSize_detailsPrimary" />
+    android:background="@drawable/notice_background"
+    android:backgroundTint="@color/notice_info_bg"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingEnd="4dp"
+    android:paddingVertical="8dp">
+
+    <ImageView
+        android:id="@+id/action_item_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_menu_info_details"
+        app:tint="@color/notice_info_icon" />
+
+    <TextView
+        android:id="@+id/action_item_info"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="16dp"
+        android:textColor="@color/notice_info_fg"
+        android:textIsSelectable="false"
+        android:textSize="@dimen/textSize_detailsPrimary"
+        tools:text="Check for updates of map and theme files" />
+
+    <Button
+        android:id="@+id/action_item_action"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="0dp"
+        android:textColor="@color/notice_info_fg"
+        tools:text="Check" />
+
+    <ImageButton
+        android:id="@+id/action_item_dismiss"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/home_notice_dismiss"
+        android:src="@drawable/ic_menu_cancel"
+        app:tint="@color/notice_info_fg" />
+</LinearLayout>
