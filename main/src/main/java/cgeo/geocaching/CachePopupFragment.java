@@ -243,21 +243,15 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
         }
     }
 
-    /** "Hint" (and "Personal note") rows, shown by the hint button */
+    /** "Hint" row, shown by the hint button (the personal note is shown by its own edit button) */
     private void addHintRows() {
         final String hint = cache.getHint();
-        final String personalNote = cache.getPersonalNote();
-        if (StringUtils.isNotBlank(hint)) {
-            if (TextUtils.containsHtml(hint)) {
-                details.addHtml(R.string.cache_hint, hint, geocode);
-            } else {
-                details.add(R.string.cache_hint, hint);
-            }
-        } else {
+        if (StringUtils.isBlank(hint)) {
             details.add(R.string.cache_hint, LocalizationUtils.getString(R.string.cache_hint_none));
-        }
-        if (StringUtils.isNotBlank(personalNote)) {
-            details.add(R.string.cache_personal_note, personalNote);
+        } else if (TextUtils.containsHtml(hint)) {
+            details.addHtml(R.string.cache_hint, hint, geocode);
+        } else {
+            details.add(R.string.cache_hint, hint);
         }
     }
 
