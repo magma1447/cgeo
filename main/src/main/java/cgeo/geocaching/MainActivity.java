@@ -719,7 +719,7 @@ public class MainActivity extends AbstractNavigationBarActivity {
             setStorageTile(binding.storageCaches, R.string.home_storage_caches, stats[0]);
             setStorageTile(binding.storageLists, R.string.home_storage_lists, stats[1]);
             setStorageTile(binding.storageOfflineLogs, R.string.home_storage_offline_logs, stats[2]);
-            binding.storageDatabase.setText(LocalizationUtils.getString(R.string.home_storage_database, android.text.format.Formatter.formatShortFileSize(this, DataStore.databasePath().length())));
+            binding.storageDatabase.setText(LocalizationUtils.getString(R.string.home_storage_database, Formatter.formatBytes(DataStore.databasePath().length())));
         }, throwable -> Log.e("Unable to add cache count", throwable)));
     }
 
