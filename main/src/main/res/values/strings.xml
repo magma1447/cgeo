@@ -2281,7 +2281,7 @@
     <string name="home_storage_caches">Caches</string>
     <string name="home_storage_lists">Lists</string>
     <string name="home_storage_offline_logs">Unsent logs</string>
-    <string name="home_storage_database">Database: %s</string>
+    <string name="home_storage_database">Database size: %s</string>
     <string name="cache_difficulty_terrain_short">D / T</string>
     <string name="cache_last_visited">Last visited</string>
     <string name="cache_last_visited_found">found: %s</string>
