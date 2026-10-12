@@ -37,6 +37,14 @@
     <color name="attribute_category_transport_disabled">#ff212121</color>
 
 
+    <!-- home screen notices: error (something does not work) and info -->
+    <color name="notice_error_bg">@color/md_error_container</color>
+    <color name="notice_error_fg">@color/md_on_error_container</color>
+    <color name="notice_error_icon">#FFFFB4AB</color>
+    <color name="notice_info_bg">#FF284777</color>
+    <color name="notice_info_fg">#FFD6E3FF</color>
+    <color name="notice_info_icon">#FFAAC7FF</color>
+
     <!-- map overlay buttons -->
     <color name="osm_zoomcontrol">@color/md_on_surface_variant</color>
     <color name="osm_zoomcontrolbackground">@color/md_surface_container_low</color>

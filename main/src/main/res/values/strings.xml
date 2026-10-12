@@ -2268,6 +2268,15 @@
     <string name="geo_search_label">Search caches nearby</string>
     <string name="search_bar_hint">Search caches/trackables</string>
     <string name="home_your_position">Your position</string>
+    <string name="home_notice_grant">Grant</string>
+    <string name="home_notice_no_location_permission">No permission to get location</string>
+    <string name="home_notice_check">Check</string>
+    <string name="home_notice_open">Open</string>
+    <string name="home_notice_details">Details</string>
+    <string name="home_notice_dismiss">Dismiss</string>
+    <string name="home_notice_mapupdate">Check for updates of map and theme files</string>
+    <string name="home_notice_tileupdate">Check for updates of downloaded routing data</string>
+    <string name="home_notice_notloggedin">Not logged in. The live map only shows caches stored locally.</string>
     <string name="home_storage">Storage</string>
     <string name="home_storage_caches">Caches</string>
     <string name="home_storage_lists">Lists</string>

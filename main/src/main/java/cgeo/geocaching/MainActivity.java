@@ -63,6 +63,7 @@ import android.app.DownloadManager;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -299,8 +300,16 @@ public class MainActivity extends AbstractNavigationBarActivity {
             cLog.add("init");
 
             initHomeSearch();
-            binding.infoNotloggedin.setOnClickListener(v ->
-                    SimpleDialog.of(this).setTitle(R.string.warn_notloggedin_title).setMessage(R.string.warn_notloggedin_long).setButtons(SimpleDialog.ButtonTextSet.YES_NO).confirm(() -> SettingsActivity.openForScreen(R.string.preference_screen_services, this)));
+            // "not logged in" notice: error level, "Details" explains and offers the service settings, no dismiss
+            final View notLoggedIn = binding.infoNotloggedin.getRoot();
+            styleNotice(notLoggedIn, true);
+            binding.infoNotloggedin.actionItemInfo.setText(R.string.home_notice_notloggedin);
+            binding.infoNotloggedin.actionItemAction.setText(R.string.home_notice_details);
+            binding.infoNotloggedin.actionItemDismiss.setVisibility(View.GONE);
+            final View.OnClickListener notLoggedInDetails = v ->
+                    SimpleDialog.of(this).setTitle(R.string.warn_notloggedin_title).setMessage(R.string.warn_notloggedin_long).setButtons(SimpleDialog.ButtonTextSet.YES_NO).confirm(() -> SettingsActivity.openForScreen(R.string.preference_screen_services, this));
+            notLoggedIn.setOnClickListener(notLoggedInDetails);
+            binding.infoNotloggedin.actionItemAction.setOnClickListener(notLoggedInDetails);
 
             // automated update check
             DownloaderUtils.checkForRoutingTileUpdates(this);
@@ -311,7 +320,7 @@ public class MainActivity extends AbstractNavigationBarActivity {
 
             // location permission currently granted?
             if (!PermissionContext.LOCATION.getNotGrantedPermissions().isEmpty()) {
-                displayActionItem(R.id.missingLocationPermission, R.string.location_no_permission, false, doAsk -> {
+                displayActionItem(R.id.missingLocationPermission, R.string.home_notice_no_location_permission, false, doAsk -> {
                     if (doAsk) {
                         this.askLocationPermissionAction.launch(null);
                     }
@@ -750,13 +759,7 @@ public class MainActivity extends AbstractNavigationBarActivity {
      */
     @Override
     protected void onLoginIssue(final boolean issue) {
-        if (issue) {
-            binding.infoNotloggedinIcon.attributeImage.setImageResource(R.drawable.attribute_wirelessbeacon);
-            binding.infoNotloggedinIcon.attributeStrikethru.setVisibility(View.VISIBLE);
-            binding.infoNotloggedin.setVisibility(View.VISIBLE);
-        } else {
-            binding.infoNotloggedin.setVisibility(View.GONE);
-        }
+        binding.infoNotloggedin.getRoot().setVisibility(issue ? View.VISIBLE : View.GONE);
     }
 
     @Override
@@ -791,29 +794,58 @@ public class MainActivity extends AbstractNavigationBarActivity {
 
     public void displayActionItem(final int layout, final String info, final boolean withBadge, final Action1<Boolean> action) {
         final int delta = withBadge ? 1 : 0;
-        final TextView l = findViewById(layout);
-        if (l != null) {
-            l.setVisibility(View.VISIBLE);
-            updateHomeBadge(delta);
-            l.setText(info);
-            // icon at the start of the notice, by kind
-            final int icon = layout == R.id.missingLocationPermission ? R.drawable.ic_menu_mylocation_off
-                    : layout == R.id.mcupdate ? R.drawable.ic_menu_email
-                    : layout == R.id.mapupdate ? R.drawable.ic_menu_mapmode
-                    : R.drawable.ic_menu_update;
-            l.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0);
-            l.setOnClickListener(v -> {
-                action.call(true);
-                l.setVisibility(View.GONE);
-                updateHomeBadge(-delta);
-            });
-            l.setOnLongClickListener(v -> {
-                action.call(false);
-                l.setVisibility(View.GONE);
-                updateHomeBadge(-delta);
-                return true;
-            });
+        final View notice = findViewById(layout);
+        if (notice == null) {
+            return;
         }
+        notice.setVisibility(View.VISIBLE);
+        updateHomeBadge(delta);
+
+        // level, text and action label by kind of notice
+        final boolean isError = layout == R.id.missingLocationPermission;
+        styleNotice(notice, isError);
+        final TextView text = notice.findViewById(R.id.action_item_info);
+        text.setText(layout == R.id.mapupdate ? LocalizationUtils.getString(R.string.home_notice_mapupdate)
+                : layout == R.id.tilesupdate ? LocalizationUtils.getString(R.string.home_notice_tileupdate)
+                : info);
+        final Button actionButton = notice.findViewById(R.id.action_item_action);
+        actionButton.setText(layout == R.id.missingLocationPermission ? R.string.home_notice_grant
+                : layout == R.id.mcupdate ? R.string.home_notice_open
+                : R.string.home_notice_check);
+
+        // tap (notice or button) carries out the action, dismiss (or long tap) postpones it
+        final Runnable hide = () -> {
+            notice.setVisibility(View.GONE);
+            updateHomeBadge(-delta);
+        };
+        final View.OnClickListener doIt = v -> {
+            action.call(true);
+            hide.run();
+        };
+        notice.setOnClickListener(doIt);
+        actionButton.setOnClickListener(doIt);
+        notice.findViewById(R.id.action_item_dismiss).setOnClickListener(v -> {
+            action.call(false);
+            hide.run();
+        });
+        notice.setOnLongClickListener(v -> {
+            action.call(false);
+            hide.run();
+            return true;
+        });
+    }
+
+    /** colors a home screen notice: error (something does not work) or info */
+    private static void styleNotice(@NonNull final View notice, final boolean isError) {
+        final Context context = notice.getContext();
+        final int foreground = context.getColor(isError ? R.color.notice_error_fg : R.color.notice_info_fg);
+        notice.setBackgroundTintList(ColorStateList.valueOf(context.getColor(isError ? R.color.notice_error_bg : R.color.notice_info_bg)));
+        final ImageView icon = notice.findViewById(R.id.action_item_icon);
+        icon.setImageResource(isError ? R.drawable.warning : R.drawable.ic_menu_info_details);
+        icon.setImageTintList(ColorStateList.valueOf(context.getColor(isError ? R.color.notice_error_icon : R.color.notice_info_icon)));
+        ((TextView) notice.findViewById(R.id.action_item_info)).setTextColor(foreground);
+        ((Button) notice.findViewById(R.id.action_item_action)).setTextColor(foreground);
+        ((ImageView) notice.findViewById(R.id.action_item_dismiss)).setImageTintList(ColorStateList.valueOf(foreground));
     }
 
 }

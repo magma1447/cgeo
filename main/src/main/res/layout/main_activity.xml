@@ -19,7 +19,7 @@
         android:id="@+id/search_pill"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:layout_below="@id/info_notloggedin"
+        android:layout_below="@id/reminders"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="12dp"
         android:background="@drawable/search_pill_background"
@@ -134,8 +134,16 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dip"
-        android:layout_below="@id/status"
+        android:layout_below="@id/info_notloggedin"
         android:orientation="vertical">
+
+        <include
+            android:id="@+id/missingLocationPermission"
+            layout="@layout/mainactivity_action_item"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
 
         <include
             android:id="@+id/mapupdate"
@@ -161,50 +169,17 @@
             android:layout_marginTop="8dp"
             android:visibility="gone" />
 
-        <include
-            android:id="@+id/missingLocationPermission"
-            layout="@layout/mainactivity_action_item"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:visibility="gone" />
-
     </LinearLayout>
 
-    <RelativeLayout
+    <include
         android:id="@+id/info_notloggedin"
+        layout="@layout/mainactivity_action_item"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dip"
         android:layout_marginTop="8dp"
-        android:layout_below="@id/reminders"
-        android:background="@drawable/helper_bcg"
-        android:minHeight="64dp"
-        android:padding="8dp"
-        android:visibility="gone">
-
-        <include
-            layout="@layout/attribute_image"
-            android:id="@+id/info_notloggedin_icon"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_alignParentLeft="true"
-            android:layout_centerVertical="true"
-            android:layout_margin="4dip" />
-
-        <TextView
-            android:id="@+id/info_notloggedin_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_marginHorizontal="8dp"
-            android:layout_toRightOf="@id/info_notloggedin_icon"
-            android:gravity="start|center_vertical"
-            android:text="@string/warn_notloggedin_short"
-            android:textColor="@color/colorTextMainInfo"
-            android:textIsSelectable="false"
-            android:textSize="@dimen/textSize_detailsPrimary" />
-    </RelativeLayout>
+        android:layout_below="@id/status"
+        android:visibility="gone" />
 
     <ListView
         android:id="@+id/connectorstatus_area"
