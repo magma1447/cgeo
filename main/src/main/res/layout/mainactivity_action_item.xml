@@ -1,55 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- home screen notice: colored by level (error / info, see MainActivity.displayActionItem),
-     icon at the start, left-aligned text, a visible action and a dismiss button -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+     icon at the start, left-aligned text, a chevron showing the whole notice is tappable,
+     and a small dismiss button in the top end corner, away from the chevron -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/action_item"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="64dp"
+    android:minHeight="76dp"
     android:background="@drawable/notice_background"
-    android:backgroundTint="@color/notice_info_bg"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
-    android:paddingStart="16dp"
-    android:paddingEnd="4dp"
-    android:paddingVertical="8dp">
+    android:backgroundTint="@color/notice_info_bg">
 
-    <ImageView
-        android:id="@+id/action_item_icon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:importantForAccessibility="no"
-        android:src="@drawable/ic_menu_info_details"
-        app:tint="@color/notice_info_icon" />
-
-    <TextView
-        android:id="@+id/action_item_info"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:layout_marginStart="16dp"
-        android:textColor="@color/notice_info_fg"
-        android:textIsSelectable="false"
-        android:textSize="@dimen/textSize_detailsPrimary"
-        tools:text="Check for updates of map and theme files" />
+        android:layout_gravity="center_vertical"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="8dp"
+        android:paddingVertical="12dp">
 
-    <Button
-        android:id="@+id/action_item_action"
-        style="@style/Widget.Material3.Button.TextButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:minWidth="0dp"
-        android:textColor="@color/notice_info_fg"
-        tools:text="Check" />
+        <ImageView
+            android:id="@+id/action_item_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_menu_info_details"
+            app:tint="@color/notice_info_icon" />
+
+        <TextView
+            android:id="@+id/action_item_info"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/notice_info_fg"
+            android:textIsSelectable="false"
+            android:textSize="@dimen/textSize_detailsPrimary"
+            tools:text="Check for updates of map and theme files" />
+
+        <ImageView
+            android:id="@+id/action_item_chevron"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginTop="12dp"
+            android:src="@drawable/ic_chevron_right"
+            app:tint="@color/notice_info_fg"
+            tools:contentDescription="Check" />
+    </LinearLayout>
 
     <ImageButton
         android:id="@+id/action_item_dismiss"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_gravity="top|end"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/home_notice_dismiss"
+        android:padding="10dp"
+        android:scaleType="fitCenter"
         android:src="@drawable/ic_menu_cancel"
         app:tint="@color/notice_info_fg" />
-</LinearLayout>
+</FrameLayout>

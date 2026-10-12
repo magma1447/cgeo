@@ -304,12 +304,11 @@ public class MainActivity extends AbstractNavigationBarActivity {
             final View notLoggedIn = binding.infoNotloggedin.getRoot();
             styleNotice(notLoggedIn, true);
             binding.infoNotloggedin.actionItemInfo.setText(R.string.home_notice_notloggedin);
-            binding.infoNotloggedin.actionItemAction.setText(R.string.home_notice_details);
+            binding.infoNotloggedin.actionItemChevron.setContentDescription(getString(R.string.home_notice_details));
             binding.infoNotloggedin.actionItemDismiss.setVisibility(View.GONE);
             final View.OnClickListener notLoggedInDetails = v ->
                     SimpleDialog.of(this).setTitle(R.string.warn_notloggedin_title).setMessage(R.string.warn_notloggedin_long).setButtons(SimpleDialog.ButtonTextSet.YES_NO).confirm(() -> SettingsActivity.openForScreen(R.string.preference_screen_services, this));
             notLoggedIn.setOnClickListener(notLoggedInDetails);
-            binding.infoNotloggedin.actionItemAction.setOnClickListener(notLoggedInDetails);
 
             // automated update check
             DownloaderUtils.checkForRoutingTileUpdates(this);
@@ -808,12 +807,13 @@ public class MainActivity extends AbstractNavigationBarActivity {
         text.setText(layout == R.id.mapupdate ? LocalizationUtils.getString(R.string.home_notice_mapupdate)
                 : layout == R.id.tilesupdate ? LocalizationUtils.getString(R.string.home_notice_tileupdate)
                 : info);
-        final Button actionButton = notice.findViewById(R.id.action_item_action);
-        actionButton.setText(layout == R.id.missingLocationPermission ? R.string.home_notice_grant
+        // the whole notice is tappable, the chevron shows that; its description names the action
+        notice.findViewById(R.id.action_item_chevron).setContentDescription(LocalizationUtils.getString(
+                layout == R.id.missingLocationPermission ? R.string.home_notice_grant
                 : layout == R.id.mcupdate ? R.string.home_notice_open
-                : R.string.home_notice_check);
+                : R.string.home_notice_check));
 
-        // tap (notice or button) carries out the action, dismiss (or long tap) postpones it
+        // tap carries out the action, dismiss (or long tap) postpones it
         final Runnable hide = () -> {
             notice.setVisibility(View.GONE);
             updateHomeBadge(-delta);
@@ -823,7 +823,6 @@ public class MainActivity extends AbstractNavigationBarActivity {
             hide.run();
         };
         notice.setOnClickListener(doIt);
-        actionButton.setOnClickListener(doIt);
         notice.findViewById(R.id.action_item_dismiss).setOnClickListener(v -> {
             action.call(false);
             hide.run();
@@ -844,7 +843,7 @@ public class MainActivity extends AbstractNavigationBarActivity {
         icon.setImageResource(isError ? R.drawable.warning : R.drawable.ic_menu_info_details);
         icon.setImageTintList(ColorStateList.valueOf(context.getColor(isError ? R.color.notice_error_icon : R.color.notice_info_icon)));
         ((TextView) notice.findViewById(R.id.action_item_info)).setTextColor(foreground);
-        ((Button) notice.findViewById(R.id.action_item_action)).setTextColor(foreground);
+        ((ImageView) notice.findViewById(R.id.action_item_chevron)).setImageTintList(ColorStateList.valueOf(foreground));
         ((ImageView) notice.findViewById(R.id.action_item_dismiss)).setImageTintList(ColorStateList.valueOf(foreground));
     }
 
