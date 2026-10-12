@@ -28,6 +28,7 @@ import cgeo.geocaching.contacts.ContactsHelper;
 import cgeo.geocaching.contacts.IContactCardProvider;
 import cgeo.geocaching.databinding.CachedetailDescriptionPageBinding;
 import cgeo.geocaching.databinding.CachedetailDetailsPageBinding;
+import cgeo.geocaching.databinding.CachedetailHintRowBinding;
 import cgeo.geocaching.databinding.CachedetailImagegalleryPageBinding;
 import cgeo.geocaching.databinding.CachedetailInventoryPageBinding;
 import cgeo.geocaching.databinding.CachedetailStatTileBinding;
@@ -117,6 +118,7 @@ import cgeo.geocaching.utils.html.HtmlStyle;
 import cgeo.geocaching.utils.html.HtmlUtils;
 import cgeo.geocaching.utils.html.UnknownTagsHandler;
 import cgeo.geocaching.utils.offlinetranslate.ITranslatorImpl;
+import cgeo.geocaching.utils.offlinetranslate.TranslateAccessor;
 import cgeo.geocaching.wherigo.WherigoViewUtils;
 
 import android.annotation.SuppressLint;
@@ -163,6 +165,7 @@ import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.TooltipCompat;
 import androidx.core.text.HtmlCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.FragmentManager;
 
 import java.lang.ref.WeakReference;
@@ -255,7 +258,6 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
 
     private boolean requireGeodata;
     private final CompositeDisposable geoDataDisposable = new CompositeDisposable();
-    private boolean lastActionWasEditNote = false;
 
     private final EnumSet<TrackableBrand> processedBrands = EnumSet.noneOf(TrackableBrand.class);
 
@@ -1356,6 +1358,8 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
      */
     public static class DetailsViewCreator extends TabbedViewPagerFragment<CachedetailDetailsPageBinding> {
         private static final String STATE_COORDINATE_FORMAT_POSITION = "coordinateFormatPosition";
+        /** whether the hint row shows a translation instead of the stored hint */
+        private boolean hintTranslated = false;
         private Geocache cache;
         private int coordinateFormatPosition = 0;
 
@@ -1525,6 +1529,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
 
             // Latest logs
             details.addLastVisited(cache);
+            addHintRow(activity);
             details.addLatestLogs(cache);
 
             // cache attributes
@@ -1561,6 +1566,163 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             } else {
                 binding.licenseBox.findViewById(R.id.license_box).setVisibility(View.GONE);
             }
+
+            // cache personal note, last on the page
+            setPersonalNote(binding.personalnote, binding.personalnoteButtonSeparator, cache.getPersonalNote());
+            binding.personalnote.setMovementMethod(AnchorAwareLinkMovementMethod.getInstance());
+            CacheDetailsCreator.addShareAction(activity, binding.personalnote);
+            TooltipCompat.setTooltipText(binding.editPersonalnote, LocalizationUtils.getString(R.string.cache_personal_note_edit));
+            binding.editPersonalnote.setOnClickListener(v -> editPersonalNote(cache, activity));
+            binding.personalnote.setOnClickListener(v -> editPersonalNote(cache, activity));
+            TooltipCompat.setTooltipText(binding.storewaypointsPersonalnote, LocalizationUtils.getString(R.string.cache_personal_note_storewaypoints));
+            binding.storewaypointsPersonalnote.setOnClickListener(v -> {
+                activity.ensureSaved();
+                activity.storeWaypointsInPersonalNote(cache);
+            });
+            TooltipCompat.setTooltipText(binding.deleteewaypointsPersonalnote, LocalizationUtils.getString(R.string.cache_personal_note_removewaypoints));
+            binding.deleteewaypointsPersonalnote.setOnClickListener(v -> {
+                activity.ensureSaved();
+                activity.removeWaypointsFromPersonalNote(cache);
+            });
+            binding.personalnoteVarsOutOfSync.setOnClickListener(v -> handleVariableOutOfSync());
+            activity.adjustPersonalNoteVarsOutOfSyncButton(binding.personalnoteVarsOutOfSync);
+            final PersonalNoteCapability noteConnector = ConnectorFactory.getConnectorAs(cache, PersonalNoteCapability.class);
+            if (noteConnector != null && noteConnector.canAddPersonalNote(cache)) {
+                binding.uploadPersonalnote.setVisibility(View.VISIBLE);
+                TooltipCompat.setTooltipText(binding.uploadPersonalnote, LocalizationUtils.getString(R.string.cache_personal_note_upload));
+                binding.uploadPersonalnote.setOnClickListener(v -> activity.checkAndUploadPersonalNote(noteConnector));
+            } else {
+                binding.uploadPersonalnote.setVisibility(View.GONE);
+            }
+
+            //register for changes of variableslist -> state of variable sync may change
+            cache.getVariables().addChangeListener(this, s -> activity.adjustPersonalNoteVarsOutOfSyncButton(binding.personalnoteVarsOutOfSync));
+        }
+
+        @Override
+        public void onDestroy() {
+            super.onDestroy();
+            if (cache != null && cache.getVariables() != null) {
+                cache.getVariables().removeChangeListener(this);
+            }
+        }
+
+        /**
+         * The hint as a row of the details list. Tapping it encodes/decodes it (rot13), long tap shares it.
+         * The button next to it translates it: offline if a translation language is set up, otherwise
+         * with the external translation app; it is hidden when neither is available.
+         */
+        private void addHintRow(final CacheDetailActivity activity) {
+            if (StringUtils.isBlank(cache.getHint())) {
+                return;
+            }
+            final CachedetailHintRowBinding row = CachedetailHintRowBinding.inflate(activity.getLayoutInflater(), binding.detailsList, false);
+            binding.detailsList.addView(row.getRoot());
+            hintTranslated = false;
+            setHintText(row.hint);
+            row.hint.setMovementMethod(AnchorAwareLinkMovementMethod.getInstance());
+            ViewUtils.setImplicitFocusOnTouch(row.hint);
+            final DecryptTextClickListener decrypt = new DecryptTextClickListener(row.hint);
+            row.hint.setOnClickListener(v -> {
+                if (hintTranslated) {
+                    // back from the translation to the hint as stored
+                    hintTranslated = false;
+                    setHintText(row.hint);
+                } else {
+                    decrypt.onClick(v);
+                }
+            });
+            row.hint.setOnLongClickListener(v -> {
+                ShareUtils.sharePlainText(activity, row.hint.getText().toString());
+                return true;
+            });
+
+            // as on the description page: no translation offered for a listing in a language the user does not translate from
+            final boolean offline = OfflineTranslateUtils.isTargetLanguageValid() && !TranslateAccessor.get().getSupportedLanguages().isEmpty();
+            if (!offline && !TranslationUtils.isEnabled()) {
+                return;
+            }
+            final String plain = HtmlUtils.extractText(cache.getHint());
+            OfflineTranslateUtils.detectLanguage(HtmlUtils.extractText(StringUtils.defaultString(cache.getDescription())) + " " + plain,
+                    lng -> AndroidRxUtils.runOnUi(() -> {
+                        if (lng == null || lng.getCode() == null || !Settings.getLanguagesToNotTranslate().contains(lng.getCode())) {
+                            showHintTranslation(activity, row, plain, offline ? lng : null);
+                        }
+                    }),
+                    error -> AndroidRxUtils.runOnUi(() -> showHintTranslation(activity, row, plain, null)));
+        }
+
+        /** shows the translate button: offline from the given language, or with the external app if there is none */
+        private void showHintTranslation(final CacheDetailActivity activity, final CachedetailHintRowBinding row, final String plain,
+                                         @Nullable final OfflineTranslateUtils.Language sourceLanguage) {
+            final boolean offline = sourceLanguage != null && OfflineTranslateUtils.isLanguageSupported(sourceLanguage);
+            if (!offline && !TranslationUtils.isEnabled()) {
+                return;
+            }
+            row.hintTranslate.setVisibility(View.VISIBLE);
+            row.hintTranslate.setOnClickListener(v -> {
+                if (hintTranslated) {
+                    hintTranslated = false;
+                    setHintText(row.hint);
+                } else if (offline) {
+                    translateHintOffline(activity, row.hint, plain, sourceLanguage);
+                } else {
+                    TranslationUtils.translate(activity, plain);
+                }
+            });
+        }
+
+        /** the hint as stored, encoded if the settings say so */
+        private void setHintText(final TextView hintView) {
+            final String hint = cache.getHint();
+            if (TextUtils.containsHtml(hint)) {
+                hintView.setText(HtmlCompat.fromHtml(hint, HtmlCompat.FROM_HTML_MODE_LEGACY, new HtmlImage(cache.getGeocode(), false, false, false), null), TextView.BufferType.SPANNABLE);
+            } else {
+                hintView.setText(hint, TextView.BufferType.SPANNABLE);
+            }
+            if (Settings.getHintAsRot13()) {
+                hintView.setText(CryptUtils.rot13((Spannable) hintView.getText()));
+            }
+        }
+
+        /** translates the decoded hint offline from the listing's language */
+        private void translateHintOffline(final CacheDetailActivity activity, final TextView hintView, final String plain, final OfflineTranslateUtils.Language sourceLanguage) {
+            OfflineTranslateUtils.getTranslator(activity, new OfflineTranslateUtils.Status(), sourceLanguage,
+                    unsupported -> activity.showToast(LocalizationUtils.getString(R.string.translator_language_unsupported, unsupported)),
+                    downloading -> activity.showToast(LocalizationUtils.getString(R.string.translator_model_download_notification)),
+                    translator -> {
+                        if (translator == null) {
+                            activity.showToast(LocalizationUtils.getString(R.string.translator_translation_initerror));
+                            return;
+                        }
+                        translator.translate(plain, translated -> AndroidRxUtils.runOnUi(() -> {
+                            hintTranslated = true;
+                            hintView.setText(translated);
+                        }), e -> AndroidRxUtils.runOnUi(() -> activity.showToast(LocalizationUtils.getString(R.string.translator_translation_error, e.getMessage()))));
+                    });
+        }
+
+        private void handleVariableOutOfSync() {
+            final Map<String, Pair<String, String>> diff = cache.getVariableDifferencesFromUserNotes();
+            if (diff.isEmpty()) {
+                return;
+            }
+            final List<ImmutableTriple<String, String, String>> items = CollectionStream.of(diff.entrySet())
+                    .map(e -> new ImmutableTriple<>(e.getKey(), e.getValue().first, e.getValue().second)).toList();
+            TextUtils.sortListLocaleAware(items, i -> i.left);
+
+            final SimpleDialog.ItemSelectModel<ImmutableTriple<String, String, String>> model = new SimpleDialog.ItemSelectModel<>();
+            model.setItems(items).setDisplayMapper((i) -> TextParam.id(R.string.cache_personal_note_vars_out_of_sync_line, i.left, i.middle, i.right));
+            SimpleDialog.of(getActivity()).setTitle(TextParam.id(R.string.cache_personal_note_vars_out_of_sync_dialog_title))
+                    .setMessage(TextParam.id(R.string.cache_personal_note_vars_out_of_sync_title))
+                    .selectMultiple(model, sel -> {
+                           final Map<String, String> toChange = new HashMap<>();
+                           for (ImmutableTriple<String, String, String> e : sel) {
+                               toChange.put(e.left, e.middle);
+                           }
+                           cache.changeVariables(toChange);
+                        ((CacheDetailActivity) getActivity()).adjustPersonalNoteVarsOutOfSyncButton(binding.personalnoteVarsOutOfSync);
+                    });
         }
 
         private class StoreCacheClickListener implements View.OnClickListener, View.OnLongClickListener {
@@ -1804,7 +1966,6 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             return Page.DESCRIPTION.id;
         }
 
-        @SuppressLint("ClickableViewAccessibility") // for binding.hint onTouchListener
         @Override
         // splitting up that method would not help improve readability
         @SuppressWarnings({"PMD.NPathComplexity", "PMD.ExcessiveMethodLength"})
@@ -1845,75 +2006,9 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             }
             binding.extraDescriptionBox.setVisibility(hasExtraDescription ? View.VISIBLE : View.GONE);
 
-            // cache personal note
-            setPersonalNote(binding.personalnote, binding.personalnoteButtonSeparator, cache.getPersonalNote());
-            binding.personalnote.setMovementMethod(AnchorAwareLinkMovementMethod.getInstance());
-            CacheDetailsCreator.addShareAction(activity, binding.personalnote);
-            TooltipCompat.setTooltipText(binding.editPersonalnote, LocalizationUtils.getString(R.string.cache_personal_note_edit));
-            binding.editPersonalnote.setOnClickListener(v -> editPersonalNote(cache, activity));
-            binding.personalnote.setOnClickListener(v -> editPersonalNote(cache, activity));
-            TooltipCompat.setTooltipText(binding.storewaypointsPersonalnote, LocalizationUtils.getString(R.string.cache_personal_note_storewaypoints));
-            binding.storewaypointsPersonalnote.setOnClickListener(v -> {
-                activity.ensureSaved();
-                activity.storeWaypointsInPersonalNote(cache);
-            });
-            TooltipCompat.setTooltipText(binding.deleteewaypointsPersonalnote, LocalizationUtils.getString(R.string.cache_personal_note_removewaypoints));
-            binding.deleteewaypointsPersonalnote.setOnClickListener(v -> {
-                activity.ensureSaved();
-                activity.removeWaypointsFromPersonalNote(cache);
-            });
-            binding.personalnoteVarsOutOfSync.setOnClickListener(v -> handleVariableOutOfSync());
-            activity.adjustPersonalNoteVarsOutOfSyncButton(binding.personalnoteVarsOutOfSync);
-            final PersonalNoteCapability connector = ConnectorFactory.getConnectorAs(cache, PersonalNoteCapability.class);
-            if (connector != null && connector.canAddPersonalNote(cache)) {
-                binding.uploadPersonalnote.setVisibility(View.VISIBLE);
-                TooltipCompat.setTooltipText(binding.uploadPersonalnote, LocalizationUtils.getString(R.string.cache_personal_note_upload));
-                binding.uploadPersonalnote.setOnClickListener(v -> activity.checkAndUploadPersonalNote(connector));
-            } else {
-                binding.uploadPersonalnote.setVisibility(View.GONE);
-            }
-
             final List<Image> spoilerImages = cache.getFilteredSpoilers();
             final boolean hasSpoilerImages = CollectionUtils.isNotEmpty(spoilerImages);
-            // cache hint and spoiler images
-            if (StringUtils.isNotBlank(cache.getHint()) || hasSpoilerImages) {
-                binding.hintBox.setVisibility(View.VISIBLE);
-            } else {
-                binding.hintBox.setVisibility(View.GONE);
-            }
-
-            if (StringUtils.isNotBlank(cache.getHint())) {
-                if (TextUtils.containsHtml(cache.getHint())) {
-                    binding.hint.setText(HtmlCompat.fromHtml(cache.getHint(), HtmlCompat.FROM_HTML_MODE_LEGACY, new HtmlImage(cache.getGeocode(), false, false, false), null), TextView.BufferType.SPANNABLE);
-                } else {
-                    binding.hint.setText(cache.getHint());
-                }
-                binding.hint.setMovementMethod(AnchorAwareLinkMovementMethod.getInstance());
-                binding.hint.setVisibility(View.VISIBLE);
-                if (Settings.getHintAsRot13()) {
-                    binding.hint.setText(CryptUtils.rot13((Spannable) binding.hint.getText()));
-                }
-                // see #17399 and https://stackoverflow.com/questions/22653641/using-onclick-on-textview-with-selectable-text-how-to-avoid-double-click
-                ViewUtils.setImplicitFocusOnTouch(binding.hint);
-                final DecryptTextClickListener decryptListener = new DecryptTextClickListener(binding.hint);
-                binding.hint.setOnClickListener(decryptListener);
-                binding.hint.setClickable(true);
-                binding.hintBox.setOnClickListener(decryptListener);
-                binding.hintBox.setClickable(true);
-                binding.hintBox.setOnLongClickListener(v -> {
-                    ShareUtils.sharePlainText(activity, binding.hint.getText().toString());
-                    return true;
-                });
-
-            } else {
-                binding.hint.setVisibility(View.GONE);
-                binding.hint.setClickable(false);
-                binding.hint.setOnClickListener(null);
-                binding.hintBox.setClickable(false);
-                binding.hintBox.setOnClickListener(null);
-            }
-
-
+            binding.spoilerBox.setVisibility(hasSpoilerImages ? View.VISIBLE : View.GONE);
             if (hasSpoilerImages) {
                 binding.hintSpoilerlink.setVisibility(View.VISIBLE);
                 binding.hintSpoilerlink.setClickable(true);
@@ -1946,9 +2041,6 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
                     binding.descriptionTranslateExternalNote,
                     () -> getListingForTranslate(cache));
 
-            //register for changes of variableslist -> state of variable sync may change
-            cache.getVariables().addChangeListener(this, s -> activity.adjustPersonalNoteVarsOutOfSyncButton(binding.personalnoteVarsOutOfSync));
-
             final OfflineTranslateUtils.Status currentTranslationStatus = activity.translationStatus;
             if (currentTranslationStatus.checkRetranslation()) {
                 currentTranslationStatus.setNotTranslated();
@@ -1963,12 +2055,10 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             if (cda.translationStatus.isTranslated()) {
                 cda.translationStatus.setNotTranslated();
                 reloadDescription(cda, cache, true, 0, cda.descriptionStyle, null, null, null);
-                restoreHint(cache);
                 binding.descriptionTranslateNote.setText(LocalizationUtils.getString(R.string.translator_language_detected, sourceLng));
                 return;
             }
 
-            // Only the description counts towards progress; hint is translated on-demand when clicked.
             cda.translationStatus.startTranslation(1, cda, cda.findViewById(R.id.description_translate_button));
 
             OfflineTranslateUtils.getTranslator(cda, cda.translationStatus, sourceLng,
@@ -1987,97 +2077,9 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
                         binding.descriptionTranslateButton.setEnabled(false);
                     };
                     reloadDescription(cda, cache, true, 0, cda.descriptionStyle, translator, cda.translationStatus, errorConsumer);
-                    setHintTranslateOnClickListener(cache, translator);
                 });
         }
 
-        /**
-         * Replaces the hint click listener so that the first click reveals the hint AND translates it,
-         * and a subsequent click re-hides the hint (restoring the encrypted state while keeping the
-         * translate-on-click behaviour active).
-         */
-        private void setHintTranslateOnClickListener(final Geocache cache, final ITranslatorImpl translator) {
-            if (StringUtils.isBlank(cache.getHint())) {
-                return;
-            }
-            final boolean[] hintRevealed = {false};
-            final View.OnClickListener listener = v -> {
-                if (!hintRevealed[0]) {
-                    hintRevealed[0] = true;
-                    // Decode rot13 if the hint is currently shown encrypted (rot13 is self-inverse)
-                    final String hintPlain = Settings.getHintAsRot13()
-                            ? CryptUtils.rot13(binding.hint.getText().toString())
-                            : binding.hint.getText().toString();
-                    translator.translate(hintPlain,
-                            translated -> binding.hint.setText(translated),
-                            e -> binding.hint.setText(hintPlain)); // show plain text on translation error
-                } else {
-                    hintRevealed[0] = false;
-                    resetHintText(cache); // re-hide (restore encrypted/original state), keep this listener
-                }
-            };
-            binding.hint.setOnClickListener(listener);
-            binding.hintBox.setOnClickListener(listener);
-            if (!Settings.getHintAsRot13()) {
-                final String hintPlain = binding.hint.getText().toString();
-                translator.translate(hintPlain, translated -> binding.hint.setText(translated), e -> binding.hint.setText(hintPlain));
-            }
-        }
-
-        /** Resets the hint text to the original cache value, re-applying rot13 if configured. */
-        private void resetHintText(final Geocache cache) {
-            if (TextUtils.containsHtml(cache.getHint())) {
-                binding.hint.setText(HtmlCompat.fromHtml(cache.getHint(), HtmlCompat.FROM_HTML_MODE_LEGACY, new HtmlImage(cache.getGeocode(), false, false, false), null), TextView.BufferType.SPANNABLE);
-            } else {
-                binding.hint.setText(cache.getHint());
-            }
-            if (Settings.getHintAsRot13()) {
-                binding.hint.setText(CryptUtils.rot13((Spannable) binding.hint.getText()));
-            }
-        }
-
-        /** Resets hint text and restores the standard decrypt-only click listener (used when undoing translation). */
-        private void restoreHint(final Geocache cache) {
-            if (StringUtils.isBlank(cache.getHint())) {
-                return;
-            }
-            resetHintText(cache);
-            final DecryptTextClickListener decryptListener = new DecryptTextClickListener(binding.hint);
-            binding.hint.setOnClickListener(decryptListener);
-            binding.hintBox.setOnClickListener(decryptListener);
-        }
-
-        @Override
-        public void onDestroy() {
-            super.onDestroy();
-            if (cache != null && cache.getVariables() != null) {
-                cache.getVariables().removeChangeListener(this);
-            }
-        }
-
-
-        private void handleVariableOutOfSync() {
-            final Map<String, Pair<String, String>> diff = cache.getVariableDifferencesFromUserNotes();
-            if (diff.isEmpty()) {
-                return;
-            }
-            final List<ImmutableTriple<String, String, String>> items = CollectionStream.of(diff.entrySet())
-                    .map(e -> new ImmutableTriple<>(e.getKey(), e.getValue().first, e.getValue().second)).toList();
-            TextUtils.sortListLocaleAware(items, i -> i.left);
-
-            final SimpleDialog.ItemSelectModel<ImmutableTriple<String, String, String>> model = new SimpleDialog.ItemSelectModel<>();
-            model.setItems(items).setDisplayMapper((i) -> TextParam.id(R.string.cache_personal_note_vars_out_of_sync_line, i.left, i.middle, i.right));
-            SimpleDialog.of(getActivity()).setTitle(TextParam.id(R.string.cache_personal_note_vars_out_of_sync_dialog_title))
-                    .setMessage(TextParam.id(R.string.cache_personal_note_vars_out_of_sync_title))
-                    .selectMultiple(model, sel -> {
-                           final Map<String, String> toChange = new HashMap<>();
-                           for (ImmutableTriple<String, String, String> e : sel) {
-                               toChange.put(e.left, e.middle);
-                           }
-                           cache.changeVariables(toChange);
-                        ((CacheDetailActivity) getActivity()).adjustPersonalNoteVarsOutOfSyncButton(binding.personalnoteVarsOutOfSync);
-                    });
-        }
 
         /** re-renders the caches Listing (=description) in background and fills in the result. Includes handling of too long listings */
         private void reloadDescription(final Activity activity, final Geocache cache, final boolean restrictLength, final int initialScroll, final HtmlStyle descriptionStyle,
@@ -2096,13 +2098,11 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
                         }
 
                         if (status == null || Strings.CS.equals(status.getSourceLanguage().getCode(), OfflineTranslateUtils.LANGUAGE_INVALID)) {
-                            OfflineTranslateUtils.initializeListingTranslatorInTabbedViewPagerActivity((CacheDetailActivity) getActivity(), binding.descriptionTranslate, binding.description.getText().toString() + " " + binding.hint.getText().toString(), this::translateListing);
+                            OfflineTranslateUtils.initializeListingTranslatorInTabbedViewPagerActivity((CacheDetailActivity) getActivity(), binding.descriptionTranslate, binding.description.getText().toString(), this::translateListing);
                         }
 
                         // we need to use post, so that the textview is layouted before scrolling gets called
-                        if (((CacheDetailActivity) activity).lastActionWasEditNote) {
-                            ((CacheDetailActivity) activity).scrollToBottom();
-                        } else if (initialScroll != 0) {
+                        if (initialScroll != 0) {
                             binding.detailScroll.post(() -> binding.detailScroll.setScrollY(initialScroll));
                         }
                         if (p.second) {
@@ -2110,8 +2110,6 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
                                 binding.descriptionRenderFully.setVisibility(View.VISIBLE);
                                 binding.descriptionRenderFully.setOnClickListener(v -> reloadDescription(activity, cache, false, binding.detailScroll.getScrollY(), descriptionStyle, translator, status, errorConsumer));
                             });
-                        } else {
-                            ((CacheDetailActivity) activity).lastActionWasEditNote = false;
                         }
                     }, errorConsumer)
             );
@@ -2789,7 +2787,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         if (cache == null) {
             return "";
         }
-        return TranslationUtils.prepareForTranslation(getDescriptionText(cache), cache.getHint());
+        return TranslationUtils.prepareForTranslation(getDescriptionText(cache));
     }
 
     @NonNull
@@ -2945,8 +2943,11 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         if (uploadNote) {
             checkAndUploadPersonalNote(ConnectorFactory.getConnectorAs(cache, PersonalNoteCapability.class));
         }
-        scrollToBottom();
-        lastActionWasEditNote = true;
+        // the personal note is the last part of the details page
+        final NestedScrollView detailsScroll = findViewById(R.id.details_scroll);
+        if (detailsScroll != null) {
+            detailsScroll.post(() -> detailsScroll.fullScroll(View.FOCUS_DOWN));
+        }
     }
 
     @Override
@@ -3047,7 +3048,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         if (personalNoteView != null) {
             setPersonalNote(personalNoteView, separator, trimmedNote);
         } else {
-            reinitializePage(Page.DESCRIPTION.id);
+            reinitializePage(Page.DETAILS.id);
         }
         adjustPersonalNoteVarsOutOfSyncButton();
 
