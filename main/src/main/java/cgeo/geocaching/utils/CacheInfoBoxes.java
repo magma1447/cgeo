@@ -78,7 +78,6 @@ public class CacheInfoBoxes {
                                         final View.OnClickListener refreshCacheClickListener,
                                         final View.OnClickListener dropCacheClickListener,
                                         final View.OnClickListener storeCacheClickListener,
-                                        final View.OnClickListener showHintClickListener,
                                         final View.OnLongClickListener moveCacheListener,
                                         final View.OnLongClickListener storeCachePreselectedListener) {
         if (view == null) {
@@ -91,21 +90,6 @@ public class CacheInfoBoxes {
         final View offlineStore = view.findViewById(R.id.offline_store);
         final View offlineDrop = view.findViewById(R.id.offline_drop);
         final View offlineEdit = view.findViewById(R.id.offline_edit);
-
-        // check if hint is available and set onClickListener and hint button visibility accordingly
-        final boolean hintButtonEnabled = setOfflineHintText(showHintClickListener, view.findViewById(R.id.offline_hint_text), cache.getHint(), cache.getPersonalNote());
-        final View offlineHint = view.findViewById(R.id.offline_hint);
-        if (null != offlineHint) {
-            if (hintButtonEnabled) {
-                offlineHint.setVisibility(View.VISIBLE);
-                offlineHint.setClickable(true);
-                offlineHint.setOnClickListener(showHintClickListener);
-            } else {
-                offlineHint.setVisibility(View.GONE);
-                offlineHint.setClickable(false);
-                offlineHint.setOnClickListener(null);
-            }
-        }
 
         offlineStore.setClickable(true);
         offlineStore.setOnClickListener(storeCacheClickListener);
@@ -250,18 +234,6 @@ public class CacheInfoBoxes {
     }
 
     @SuppressLint("SetTextI18n")
-    private static boolean setOfflineHintText(final View.OnClickListener showHintClickListener, final TextView offlineHintTextView, final String hint, final String personalNote) {
-        if (null != showHintClickListener) {
-            final boolean hintGiven = StringUtils.isNotEmpty(hint);
-            final boolean personalNoteGiven = StringUtils.isNotEmpty(personalNote);
-            if (hintGiven || personalNoteGiven) {
-                offlineHintTextView.setText((hintGiven ? hint + (personalNoteGiven ? "\r\n" : "") : "") + (personalNoteGiven ? personalNote : ""));
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static void updateCacheListsAndMatchingFilters(final View view, final Geocache cache, @Nullable final CacheDetailActivity cacheDetailActivity) {
         if (view.findViewById(R.id.offline_compact_row) != null) {
             updateCompactListsAndMatchingFilters(view, cache);
