@@ -10,11 +10,13 @@ import cgeo.geocaching.location.Units;
 import cgeo.geocaching.models.Geocache;
 import cgeo.geocaching.models.Waypoint;
 import cgeo.geocaching.sensors.GeoData;
+import cgeo.geocaching.sensors.LocationDataProvider;
 import cgeo.geocaching.service.GeocacheChangedBroadcastReceiver;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.speech.SpeechService;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.ui.CacheDetailsCreator;
+import cgeo.geocaching.ui.CompassMiniView;
 import cgeo.geocaching.ui.CoordinatesFormatSwitcher;
 import cgeo.geocaching.ui.ViewUtils;
 import cgeo.geocaching.utils.AndroidRxUtils;
@@ -25,12 +27,14 @@ import cgeo.geocaching.utils.TextUtils;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 
@@ -74,7 +78,6 @@ public class WaypointPopupFragment extends AbstractDialogFragmentWithProximityNo
             final Geopoint coordinates = waypoint.getCoords();
             if (coordinates != null) {
                 waypointDistance.setText(Units.getDistanceFromKilometers(geo.getCoords().distanceTo(coordinates)));
-                waypointDistance.bringToFront();
             }
         }
     }
@@ -103,6 +106,16 @@ public class WaypointPopupFragment extends AbstractDialogFragmentWithProximityNo
 
             toolbar.setLogo(MapMarkerUtils.getWaypointMarker(getResources(), waypoint, false, Settings.getIconScaleEverywhere()).getDrawable());
             onCreatePopupOptionsMenu(toolbar, this, cache);
+            // as in the cache popup: the distance starts the default navigation, so the toolbar keeps only
+            // "set as target" and the choice of navigation apps; everything else stays in the overflow menu
+            final Menu menu = toolbar.getMenu();
+            menu.findItem(R.id.menu_default_navigation).setVisible(false);
+            for (int i = 0; i < menu.size(); i++) {
+                final MenuItem menuItem = menu.getItem(i);
+                if (menuItem.getItemId() != R.id.menu_target && menuItem.getItemId() != R.id.menu_navigate) {
+                    menuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+                }
+            }
             toolbar.setOnMenuItemClickListener(this::onPopupOptionsItemSelected);
 
             binding.title.setText(TextUtils.coloredCacheText(getActivity(), cache, cache.getName()));
@@ -117,7 +130,6 @@ public class WaypointPopupFragment extends AbstractDialogFragmentWithProximityNo
             if (StringUtils.isNotBlank(waypoint.getName())) {
                 details.add(R.string.cache_name, waypoint.getName());
             }
-            waypointDistance = details.addDistance(waypoint, waypointDistance);
 
             final CoordinatesFormatSwitcher coordinateSwitcher = details.addCoordinates(waypoint.getCoords(), coordinateFormatPosition);
             if (coordinateSwitcher != null) {
@@ -125,6 +137,18 @@ public class WaypointPopupFragment extends AbstractDialogFragmentWithProximityNo
             }
 
             details.addLatestLogs(cache);
+
+            // distance and direction in the top right corner; tap: default navigation, long tap: the second one
+            waypointDistance = binding.popupDistance;
+            final Geopoint here = LocationDataProvider.getInstance().currentGeo().getCoords();
+            waypointDistance.setText(waypoint.getCoords() != null ? Units.getDistanceFromKilometers(here.distanceTo(waypoint.getCoords())) : "--");
+            binding.popupCompass.setTargetCoords(waypoint.getCoords());
+            binding.popupNavigation.setOnClickListener(v -> startDefaultNavigation());
+            binding.popupNavigation.setOnLongClickListener(v -> {
+                startDefaultNavigation2();
+                return true;
+            });
+            layoutDetailRows();
 
             // addWideHTML should go to the end of the list
             final String note = waypoint.getNote();
@@ -167,6 +191,35 @@ public class WaypointPopupFragment extends AbstractDialogFragmentWithProximityNo
         } catch (final Exception e) {
             Log.e("WaypointPopup.init", e);
         }
+    }
+
+    /** keeps the first row clear of the distance and the rows tight, as in the cache popup */
+    private void layoutDetailRows() {
+        final ViewGroup rows = binding.waypointDetailsList;
+        if (rows.getChildCount() > 0) {
+            binding.popupNavigation.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+            final View first = rows.getChildAt(0);
+            first.setPaddingRelative(first.getPaddingStart(), first.getPaddingTop(), binding.popupNavigation.getMeasuredWidth(), first.getPaddingBottom());
+        }
+        final int rowGap = ViewUtils.dpToPixel(3);
+        for (int i = 0; i < rows.getChildCount(); i++) {
+            final View row = rows.getChildAt(i);
+            if (row.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+                ((ViewGroup.MarginLayoutParams) row.getLayoutParams()).bottomMargin = rowGap;
+            }
+        }
+    }
+
+    @Override
+    protected boolean closeAfterSetAsTarget() {
+        // stay open, as the cache popup does: setting the target is often followed by choosing a navigation app
+        return false;
+    }
+
+    @Override
+    @Nullable
+    protected CompassMiniView getOwnCompassView() {
+        return binding == null ? null : binding.popupCompass;
     }
 
     @Override
