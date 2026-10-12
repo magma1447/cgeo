@@ -1476,7 +1476,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
 
             // list and matching filters
             CacheInfoBoxes.updateOfflineBox(binding.getRoot(), cache, new RefreshCacheClickListener(), new DropCacheClickListener(),
-                    new StoreCacheClickListener(), null, new MoveCacheClickListener(), new StoreCacheClickListener());
+                    new StoreCacheClickListener(), new MoveCacheClickListener(), new StoreCacheClickListener());
             CacheInfoBoxes.updateCacheListsAndMatchingFilters(binding.getRoot(), cache, activity);
 
             // watchlist

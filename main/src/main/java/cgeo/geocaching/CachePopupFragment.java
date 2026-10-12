@@ -57,6 +57,7 @@ import org.apache.commons.lang3.Strings;
 public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotification {
     private final Progress progress = new Progress();
     private PopupBinding binding;
+    private boolean hintShown = false;
 
     public static Fragment newInstance(final String geocode) {
 
@@ -166,30 +167,8 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
             }
             toolbar.setOnMenuItemClickListener(this::onPopupOptionsItemSelected);
 
-            details = new CacheDetailsCreator(requireActivity(), binding.detailsList);
-            binding.title.setText(TextUtils.coloredCacheText(getActivity(), cache, StringUtils.defaultIfBlank(cache.getName(), "")));
-            details.addShareAction(binding.title);
-
-            addCacheDetails(true);
-            binding.popupNavigation.setOnClickListener(v -> startDefaultNavigation());
-            binding.popupNavigation.setOnLongClickListener(v -> {
-                startDefaultNavigation2();
-                return true;
-            });
-            // keep the first row clear of the distance in the top right corner
-            if (binding.detailsList.getChildCount() > 0) {
-                binding.popupNavigation.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
-                final View first = binding.detailsList.getChildAt(0);
-                first.setPaddingRelative(first.getPaddingStart(), first.getPaddingTop(), binding.popupNavigation.getMeasuredWidth(), first.getPaddingBottom());
-            }
-            // the popup shares the detail rows with the details page, but keeps them tight
-            final int rowGap = ViewUtils.dpToPixel(3);
-            for (int i = 0; i < binding.detailsList.getChildCount(); i++) {
-                final View row = binding.detailsList.getChildAt(i);
-                if (row.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
-                    ((ViewGroup.MarginLayoutParams) row.getLayoutParams()).bottomMargin = rowGap;
-                }
-            }
+            showDetails();
+            binding.popupHint.setOnClickListener(v -> toggleHint());
 
             binding.editPersonalnote.setVisibility(View.VISIBLE);
             binding.editPersonalnote.setOnClickListener(arg0 -> {
@@ -225,6 +204,93 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
 
         // cache is loaded. remove progress-popup if any there
         progress.dismiss();
+    }
+
+    /** the detail rows (geocode to recent logs, and the hint if toggled on) */
+    private void showDetails() {
+        details = new CacheDetailsCreator(requireActivity(), binding.detailsList);
+        binding.title.setText(TextUtils.coloredCacheText(getActivity(), cache, StringUtils.defaultIfBlank(cache.getName(), "")));
+        details.addShareAction(binding.title);
+
+        addCacheDetails(true);
+        if (hintShown) {
+            addHintRows();
+        }
+        binding.popupNavigation.setOnClickListener(v -> startDefaultNavigation());
+        binding.popupNavigation.setOnLongClickListener(v -> {
+            startDefaultNavigation2();
+            return true;
+        });
+        // keep the first row clear of the distance in the top right corner
+        if (binding.detailsList.getChildCount() > 0) {
+            binding.popupNavigation.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+            final View first = binding.detailsList.getChildAt(0);
+            first.setPaddingRelative(first.getPaddingStart(), first.getPaddingTop(), binding.popupNavigation.getMeasuredWidth(), first.getPaddingBottom());
+        }
+        // the popup shares the detail rows with the details page, but keeps them tight
+        final int rowGap = ViewUtils.dpToPixel(3);
+        for (int i = 0; i < binding.detailsList.getChildCount(); i++) {
+            final View row = binding.detailsList.getChildAt(i);
+            if (row.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+                ((ViewGroup.MarginLayoutParams) row.getLayoutParams()).bottomMargin = rowGap;
+            }
+        }
+        // keep the last row clear of the hint button in the bottom right corner
+        if (binding.detailsList.getChildCount() > 1) {
+            binding.popupHint.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+            final View last = binding.detailsList.getChildAt(binding.detailsList.getChildCount() - 1);
+            last.setPaddingRelative(last.getPaddingStart(), last.getPaddingTop(), binding.popupHint.getMeasuredWidth(), last.getPaddingBottom());
+        }
+    }
+
+    /** "Hint" (and "Personal note") rows, shown by the hint button */
+    private void addHintRows() {
+        final String hint = cache.getHint();
+        final String personalNote = cache.getPersonalNote();
+        if (StringUtils.isNotBlank(hint)) {
+            if (TextUtils.containsHtml(hint)) {
+                details.addHtml(R.string.cache_hint, hint, geocode);
+            } else {
+                details.add(R.string.cache_hint, hint);
+            }
+        } else {
+            details.add(R.string.cache_hint, LocalizationUtils.getString(R.string.cache_hint_none));
+        }
+        if (StringUtils.isNotBlank(personalNote)) {
+            details.add(R.string.cache_personal_note, personalNote);
+        }
+    }
+
+    /** shows or hides the hint; a cache only seen on the live map has no hint yet, so its details are loaded first */
+    private void toggleHint() {
+        if (hintShown || cache.isDetailed() || StringUtils.isNotBlank(cache.getHint())) {
+            hintShown = !hintShown;
+            showDetails();
+            return;
+        }
+        if (!Network.isConnected()) {
+            showToast(LocalizationUtils.getString(R.string.err_server_general));
+            return;
+        }
+        final String loading = LocalizationUtils.getString(R.string.cache_dialog_loading_details);
+        progress.show(requireActivity(), loading, loading, true, null);
+        final Geocache[] loaded = new Geocache[1];
+        AndroidRxUtils.andThenOnUi(Schedulers.io(), () -> {
+            Geocache.searchByGeocode(geocode, null, false, null);
+            loaded[0] = DataStore.loadCache(geocode, LoadFlags.LOAD_CACHE_OR_DB);
+        }, () -> {
+            progress.dismiss();
+            if (binding == null || !isAdded()) {
+                return;
+            }
+            if (loaded[0] == null || !loaded[0].isDetailed()) {
+                showToast(LocalizationUtils.getString(R.string.err_download_fail));
+                return;
+            }
+            cache = loaded[0];
+            hintShown = true;
+            showDetails();
+        });
     }
 
     @Override
@@ -290,7 +356,7 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
         if (view != null) {
             CacheInfoBoxes.updateOfflineBox(view, cache,
                     new RefreshCacheClickListener(), new DropCacheClickListener(),
-                    new StoreCacheClickListener(), new ShowHintClickListener(binding), new MoveCacheClickListener(), new StoreCacheClickListener());
+                    new StoreCacheClickListener(), new MoveCacheClickListener(), new StoreCacheClickListener());
             CacheInfoBoxes.updateCacheListsAndMatchingFilters(view, cache, null);
         }
     }
@@ -372,28 +438,6 @@ public class CachePopupFragment extends AbstractDialogFragmentWithProximityNotif
             final DropCacheHandler dropCacheHandler = new DropCacheHandler(CachePopupFragment.this);
             progress.show(getActivity(), LocalizationUtils.getString(R.string.cache_dialog_offline_drop_title), LocalizationUtils.getString(R.string.cache_dialog_offline_drop_message), true, null);
             cache.drop(dropCacheHandler);
-        }
-    }
-
-    private static class ShowHintClickListener implements View.OnClickListener {
-        private final PopupBinding binding;
-
-        ShowHintClickListener(final PopupBinding binding) {
-            this.binding = binding;
-        }
-
-        @Override
-        public void onClick(final View view) {
-            final TextView offlineHintText = binding.offlineHintText;
-            final View offlineHintSeparator = binding.offlineHintSeparator;
-            if (offlineHintText.getVisibility() == View.VISIBLE) {
-                offlineHintText.setVisibility(View.GONE);
-                offlineHintSeparator.setVisibility(View.GONE);
-            } else {
-                offlineHintText.setVisibility(View.VISIBLE);
-                offlineHintSeparator.setVisibility(View.VISIBLE);
-                CacheDetailsCreator.addShareAction(offlineHintText.getContext(), offlineHintText);
-            }
         }
     }
 
