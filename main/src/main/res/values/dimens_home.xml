@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- home screen spacing for short screens (less than 720dp of available height);
+     taller screens get the roomier values from values-h720dp -->
+<resources>
+    <dimen name="home_search_height">48dp</dimen>
+    <dimen name="home_search_margin_top">8dp</dimen>
+    <dimen name="home_gap_first">10dp</dimen>
+    <dimen name="home_gap">8dp</dimen>
+    <dimen name="home_card_padding_top">10dp</dimen>
+    <dimen name="home_card_padding_bottom">8dp</dimen>
+</resources>

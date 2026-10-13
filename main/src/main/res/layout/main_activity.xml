@@ -26,10 +26,10 @@
     <androidx.appcompat.widget.SearchView
         android:id="@+id/search_pill"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="@dimen/home_search_height"
         android:layout_below="@id/reminders"
         android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="@dimen/home_search_margin_top"
         android:background="@drawable/search_pill_background"
         android:paddingStart="4dp"
         app:iconifiedByDefault="false"
@@ -43,7 +43,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/search_pill"
         android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="@dimen/home_gap_first"
         android:background="@drawable/section_card"
         android:orientation="vertical"
         android:paddingHorizontal="16dp"
@@ -58,12 +58,12 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/connectorstatus_area"
         android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="@dimen/home_gap"
         android:background="@drawable/section_card"
         android:orientation="vertical"
         android:paddingHorizontal="16dp"
-        android:paddingTop="14dp"
-        android:paddingBottom="10dp">
+        android:paddingTop="@dimen/home_card_padding_top"
+        android:paddingBottom="@dimen/home_card_padding_bottom">
 
         <TextView
             android:layout_width="wrap_content"
@@ -87,12 +87,12 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/location_area"
         android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="@dimen/home_gap"
         android:background="@drawable/section_card"
         android:orientation="vertical"
         android:paddingHorizontal="16dp"
-        android:paddingTop="14dp"
-        android:paddingBottom="12dp"
+        android:paddingTop="@dimen/home_card_padding_top"
+        android:paddingBottom="@dimen/home_card_padding_bottom"
         android:visibility="gone"
         tools:visibility="visible">
 
@@ -104,6 +104,7 @@
             android:textColor="@color/md_primary" />
 
         <LinearLayout
+            android:id="@+id/storage_tiles"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -141,6 +142,17 @@
             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
             android:textColor="@color/colorTextHint"
             tools:text="Database: 208 KB" />
+
+        <!-- the same in one line, when the home screen is short of room (see MainActivity.fitHomeToScreen) -->
+        <TextView
+            android:id="@+id/storage_compact"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textColor="@color/colorText"
+            android:visibility="gone"
+            tools:text="6 caches · 2 lists · 1 unsent log · 224.0 KB" />
     </LinearLayout>
 
     <androidx.fragment.app.FragmentContainerView
@@ -210,7 +222,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/storage_card"
         android:layout_marginHorizontal="12dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="@dimen/home_gap_first"
         android:orientation="vertical">
 
         <!-- will be filled dynamically with quick launch buttons -->
