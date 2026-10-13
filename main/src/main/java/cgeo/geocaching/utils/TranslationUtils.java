@@ -10,8 +10,11 @@ import cgeo.geocaching.utils.offlinetranslate.TranslateAccessor;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.InsetDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -45,6 +48,11 @@ public final class TranslationUtils {
             this.nameId = nameId;
             this.appPackageName = appPackageName;
             this.urlPattern = urlPattern;
+        }
+
+        /** the translator's name without the app/website variant, e.g. "Google Translate" */
+        public String getShortName() {
+            return LocalizationUtils.getString(nameId);
         }
 
         public String toUserDisplayableString() {
@@ -110,6 +118,31 @@ public final class TranslationUtils {
     @NonNull
     public static ImageParam getTranslationIcon() {
         return getTranslator().getIcon();
+    }
+
+    /**
+     * An icon for the external translation that can stand next to the offline one: the app's icon (its monochrome
+     * "themed icon" layer where the app has one, Android 13+), a globe for the website, else an external link.
+     */
+    @NonNull
+    public static ImageParam getDistinctTranslationIcon() {
+        final Translator translator = getTranslator();
+        final ImageParam icon = translator.getIcon();
+        if (icon.isReferencedById()) {
+            return ImageParam.id(translator.urlPattern != null ? R.drawable.ic_globe : R.drawable.ic_external_link);
+        }
+        final Drawable appIcon = icon.getAsDrawable();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && appIcon instanceof AdaptiveIconDrawable
+                && ((AdaptiveIconDrawable) appIcon).getMonochrome() != null) {
+            // the layer has the adaptive icon's safe zone around it: enlarge it to the visible part, tint it like our icons
+            return ImageParam.drawable(new InsetDrawable(((AdaptiveIconDrawable) appIcon).getMonochrome(), -0.25f));
+        }
+        return icon;
+    }
+
+    @NonNull
+    public static String getTranslationShortName() {
+        return getTranslator().getShortName();
     }
 
     public static void translate(final Activity activity, final String text) {

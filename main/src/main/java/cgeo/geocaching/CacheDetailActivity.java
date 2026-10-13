@@ -1652,24 +1652,32 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
                     error -> AndroidRxUtils.runOnUi(() -> showHintTranslation(activity, row, plain, null)));
         }
 
-        /** shows the translate button: offline from the given language, or with the external app if there is none */
+        /**
+         * Shows the translate buttons next to the hint: offline (from the listing's language; long tap chooses
+         * another one) and the external app or website, each when available.
+         */
         private void showHintTranslation(final CacheDetailActivity activity, final CachedetailHintRowBinding row, final String plain,
                                          @Nullable final OfflineTranslateUtils.Language sourceLanguage) {
-            final boolean offline = sourceLanguage != null && OfflineTranslateUtils.isLanguageSupported(sourceLanguage);
-            if (!offline && !TranslationUtils.isEnabled()) {
-                return;
+            if (sourceLanguage != null && OfflineTranslateUtils.isLanguageSupported(sourceLanguage)) {
+                row.hintTranslate.setVisibility(View.VISIBLE);
+                row.hintTranslate.setOnClickListener(v -> {
+                    if (hintTranslated) {
+                        hintTranslated = false;
+                        setHintText(row.hint);
+                    } else {
+                        translateHintOffline(activity, row.hint, plain, sourceLanguage);
+                    }
+                });
+                row.hintTranslate.setOnLongClickListener(v -> {
+                    OfflineTranslateUtils.showLanguageSelection(activity, lng -> translateHintOffline(activity, row.hint, plain, lng));
+                    return true;
+                });
             }
-            row.hintTranslate.setVisibility(View.VISIBLE);
-            row.hintTranslate.setOnClickListener(v -> {
-                if (hintTranslated) {
-                    hintTranslated = false;
-                    setHintText(row.hint);
-                } else if (offline) {
-                    translateHintOffline(activity, row.hint, plain, sourceLanguage);
-                } else {
-                    TranslationUtils.translate(activity, plain);
-                }
-            });
+            if (TranslationUtils.isEnabled()) {
+                TranslationUtils.getDistinctTranslationIcon().applyTo(row.hintTranslateExternal);
+                row.hintTranslateExternal.setVisibility(View.VISIBLE);
+                row.hintTranslateExternal.setOnClickListener(v -> TranslationUtils.translate(activity, plain));
+            }
         }
 
         /** the hint as stored, encoded if the settings say so */
@@ -2040,12 +2048,31 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
                     binding.descriptionTranslateExternal,
                     binding.descriptionTranslateExternalNote,
                     () -> getListingForTranslate(cache));
+            // the separator above the translate buttons follows them: they show up (or not) once the language is known
+            binding.descriptionTranslateRow.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+                final boolean anyButton = binding.descriptionTranslate.getVisibility() == View.VISIBLE
+                        || binding.descriptionTranslateExternal.getVisibility() == View.VISIBLE;
+                final int separator = anyButton ? View.VISIBLE : View.GONE;
+                if (binding.descriptionTranslateSeparator.getVisibility() != separator) {
+                    binding.descriptionTranslateSeparator.setVisibility(separator);
+                }
+            });
+
+            // the button names the service; the icon tells app (its icon) from website (a globe)
+            binding.descriptionTranslateExternalButton.setText(TranslationUtils.getTranslationShortName());
+            TranslationUtils.getDistinctTranslationIcon().applyToIcon(binding.descriptionTranslateExternalButton);
 
             final OfflineTranslateUtils.Status currentTranslationStatus = activity.translationStatus;
             if (currentTranslationStatus.checkRetranslation()) {
                 currentTranslationStatus.setNotTranslated();
                 translateListing();
             }
+        }
+
+        /** a message below the offline translation button; none hides the line */
+        private void setTranslateNote(@Nullable final CharSequence text) {
+            binding.descriptionTranslateNote.setText(text);
+            binding.descriptionTranslateNote.setVisibility(StringUtils.isBlank(text) ? View.GONE : View.VISIBLE);
         }
 
         private void translateListing() {
@@ -2055,7 +2082,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             if (cda.translationStatus.isTranslated()) {
                 cda.translationStatus.setNotTranslated();
                 reloadDescription(cda, cache, true, 0, cda.descriptionStyle, null, null, null);
-                binding.descriptionTranslateNote.setText(LocalizationUtils.getString(R.string.translator_language_detected, sourceLng));
+                setTranslateNote(null); // back to the original: the language chip says it all
                 return;
             }
 
@@ -2064,16 +2091,16 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             OfflineTranslateUtils.getTranslator(cda, cda.translationStatus, sourceLng,
                 unsupportedLng -> {
                     cda.translationStatus.abortTranslation();
-                    binding.descriptionTranslateNote.setText(LocalizationUtils.getString(R.string.translator_language_unsupported, unsupportedLng));
-                }, modelDownloading -> binding.descriptionTranslateNote.setText(R.string.translator_model_download_notification),
+                    setTranslateNote(LocalizationUtils.getString(R.string.translator_language_unsupported, unsupportedLng));
+                }, modelDownloading -> setTranslateNote(LocalizationUtils.getString(R.string.translator_model_download_notification)),
     translator -> {
                     if (null == translator) {
-                        binding.descriptionTranslateNote.setText(R.string.translator_translation_initerror);
+                        setTranslateNote(LocalizationUtils.getString(R.string.translator_translation_initerror));
                         return;
                     }
 
                     final Consumer<Exception> errorConsumer = error -> {
-                        binding.descriptionTranslateNote.setText(getResources().getText(R.string.translator_translation_error, error.getMessage()));
+                        setTranslateNote(getResources().getText(R.string.translator_translation_error, error.getMessage()));
                         binding.descriptionTranslateButton.setEnabled(false);
                     };
                     reloadDescription(cda, cache, true, 0, cda.descriptionStyle, translator, cda.translationStatus, errorConsumer);
@@ -2094,7 +2121,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
                         }
                         displayDescription(activity, cache, p.first, binding.description);
                         if (translator != null) {
-                            binding.descriptionTranslateNote.setText(LocalizationUtils.getString(R.string.translator_translation_success, status.getSourceLanguage()));
+                            setTranslateNote(LocalizationUtils.getString(R.string.translator_translation_success, status.getSourceLanguage()));
                         }
 
                         if (status == null || Strings.CS.equals(status.getSourceLanguage().getCode(), OfflineTranslateUtils.LANGUAGE_INVALID)) {
