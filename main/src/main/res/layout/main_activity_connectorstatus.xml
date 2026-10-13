@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- one account in the home screen's account card: avatar, user name and finds, then service and login status -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="7dp"
-    android:layout_margin="3dip">
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingVertical="4dp">
 
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/item_icon"
-        style="@style/button_icon"
-        android:layout_width="96dp"
-        android:layout_height="96dp"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:clickable="false"
-        android:gravity="left"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
         android:scaleType="centerCrop"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
         tools:src="@drawable/avartar_placeholder" />
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_below="@id/item_icon"
+        android:layout_weight="1"
+        android:layout_marginStart="16dp"
         android:orientation="vertical">
 
         <TextView
@@ -29,43 +29,36 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:ellipsize="end"
-            android:layout_gravity="center"
-            android:textIsSelectable="false"
-            android:textSize="@dimen/textSize_headingPrimary"
-            android:textStyle="bold"
-            tools:text="username" />
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:textColor="@color/colorText"
+            tools:text="SampleCacher" />
 
         <TextView
             android:id="@+id/item_info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:ellipsize="end"
-            android:layout_gravity="center"
-            android:lines="1"
             android:maxLines="1"
-            android:scrollHorizontally="true"
-            android:textIsSelectable="false"
-            android:textSize="@dimen/textSize_headingSecondary"
-            tools:text="1234 finds"/>
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textColor="@color/colorText"
+            tools:text="1,234 finds" />
 
         <TextView
             android:id="@+id/item_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:scrollHorizontally="true"
             android:text="@string/init_login_popup_working"
-            android:textIsSelectable="false"
-            android:textSize="@dimen/textSize_headingSecondary" />
+            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+            android:textColor="@color/colorTextHint"
+            tools:text="GC · Logged in · Premium" />
 
         <Button
             android:id="@+id/manual_login"
-            android:visibility="gone"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="@string/init_login_manual"
-            style="@style/button_full"
-            android:hint="@string/init_login_manual" />
-
+            android:visibility="gone" />
     </LinearLayout>
-</RelativeLayout>
+</LinearLayout>

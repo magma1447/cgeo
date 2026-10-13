@@ -73,7 +73,6 @@ import android.os.Message;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -139,118 +138,116 @@ public class MainActivity extends AbstractNavigationBarActivity {
                     // Get active connectors with login status
                     final ILogin[] loginConns = ConnectorFactory.getActiveLiveConnectors();
 
-                    // Update UI
-                    activity.binding.connectorstatusArea.setAdapter(new ArrayAdapter<ILogin>(activity, R.layout.main_activity_connectorstatus, loginConns) {
-                        @NonNull
-                        @Override
-                        public View getView(final int position, final View convertView, @NonNull final android.view.ViewGroup parent) {
-                            // do NOT use convertView, as it gets filled asynchronously, which may lead to the wrong view being filled
-                            final View view = activity.getLayoutInflater().inflate(R.layout.main_activity_connectorstatus, parent, false);
-                            final ILogin connector = getItem(position);
-                            fillView(view, connector);
-                            return view;
+                    // Update UI: one row per account in the account card
+                    final LinearLayout area = activity.binding.connectorstatusArea;
+                    area.removeAllViews();
+                    for (final ILogin connector : loginConns) {
+                        final View view = activity.getLayoutInflater().inflate(R.layout.main_activity_connectorstatus, area, false);
+                        area.addView(view);
+                        fillView(activity, view, connector);
+                    }
+                    area.setVisibility(loginConns.length > 0 ? View.VISIBLE : View.GONE);
+                }
+            }
+        }
+
+        /** one account row of the home screen's account card */
+        private static void fillView(final MainActivity activity, final View connectorInfo, final ILogin conn) {
+
+            final TextView connectorStatus = connectorInfo.findViewById(R.id.item_status);
+            final boolean isLoggingIn = Strings.CS.equals(conn.getLoginStatusString(), LocalizationUtils.getString(R.string.init_login_popup_working));
+            final boolean isLoggingOk = Strings.CS.equals(conn.getLoginStatusString(), LocalizationUtils.getString(R.string.init_login_popup_ok));
+            final StringBuilder connInfo = new StringBuilder(conn.getNameAbbreviated()).append(Formatter.SEPARATOR).append(conn.getLoginStatusString());
+            if (conn instanceof GCConnector && Network.isConnected() && !isLoggingIn && !isLoggingOk) {
+                final Pair<String, Long> lastError = Settings.getLastLoginErrorGC();
+                if (lastError != null && StringUtils.isNotBlank(lastError.first) && lastError.second > Settings.getLastLoginSuccessGC()) {
+                    connInfo.append(" (").append(lastError.first).append(")");
+                }
+            }
+            connectorStatus.setText(connInfo);
+            final View.OnClickListener connectorConfig = v -> SettingsActivity.openForScreen(conn.getServiceSpecificPreferenceScreenKey(), activity);
+            connectorStatus.setOnClickListener(connectorConfig);
+
+            final Button manualLogin = connectorInfo.findViewById(R.id.manual_login);
+            manualLogin.setVisibility(connInfo.toString().contains(LocalizationUtils.getString(R.string.err_auth_gc_captcha)) ? View.VISIBLE : View.GONE);
+            manualLogin.setOnClickListener(b -> conn.performManualLogin(activity, () -> {
+                if (!activity.isDestroyed() && !activity.isFinishing()) {
+                    activity.updateUserInfoHandler.sendEmptyMessage(-1);
+                    activity.onLoginIssue(!anyConnectorLoggedIn());
+                }
+            }));
+
+            AndroidRxUtils.andThenOnUi(AndroidRxUtils.computationScheduler,
+                    () -> {
+                        final StringBuilder userFoundCount = new StringBuilder();
+
+                        final int count = FoundNumCounter.getAndUpdateFoundNum(conn);
+                        if (count >= 0) {
+                            userFoundCount.append(LocalizationUtils.getPlural(R.plurals.user_finds, count));
+
+                            if (Settings.isDisplayOfflineLogsHomescreen()) {
+                                final int offlinefounds = DataStore.getFoundsOffline(conn);
+                                if (offlinefounds > 0) {
+                                    userFoundCount.append(" + ").append(LocalizationUtils.getPlural(R.plurals.user_finds_offline, offlinefounds));
+                                }
+                            }
                         }
-
-                        private void fillView(final View connectorInfo, final ILogin conn) {
-
-                            final TextView connectorStatus = connectorInfo.findViewById(R.id.item_status);
-                            final boolean isLoggingIn = Strings.CS.equals(conn.getLoginStatusString(), LocalizationUtils.getString(R.string.init_login_popup_working));
-                            final boolean isLoggingOk = Strings.CS.equals(conn.getLoginStatusString(), LocalizationUtils.getString(R.string.init_login_popup_ok));
-                            final StringBuilder connInfo = new StringBuilder(conn.getNameAbbreviated()).append(Formatter.SEPARATOR).append(conn.getLoginStatusString());
-                            if (conn instanceof GCConnector && Network.isConnected() && !isLoggingIn && !isLoggingOk) {
-                                final Pair<String, Long> lastError = Settings.getLastLoginErrorGC();
-                                if (lastError != null && StringUtils.isNotBlank(lastError.first) && lastError.second > Settings.getLastLoginSuccessGC()) {
-                                    connInfo.append(" (").append(lastError.first).append(")");
-                                }
-                            }
-                            connectorStatus.setText(connInfo);
-                            final View.OnClickListener connectorConfig = v -> SettingsActivity.openForScreen(conn.getServiceSpecificPreferenceScreenKey(), activity);
-                            connectorStatus.setOnClickListener(connectorConfig);
-
-                            final Button manualLogin = connectorInfo.findViewById(R.id.manual_login);
-                            manualLogin.setVisibility(connInfo.toString().contains(LocalizationUtils.getString(R.string.err_auth_gc_captcha)) ? View.VISIBLE : View.GONE);
-                            manualLogin.setOnClickListener(b -> conn.performManualLogin(activity, () -> {
-                                if (!activity.isDestroyed() && !activity.isFinishing()) {
-                                    activity.updateUserInfoHandler.sendEmptyMessage(-1);
-                                    activity.onLoginIssue(!anyConnectorLoggedIn());
-                                }
-                            }));
-
-                            AndroidRxUtils.andThenOnUi(AndroidRxUtils.computationScheduler,
-                                    () -> {
-                                        final StringBuilder userFoundCount = new StringBuilder();
-
-                                        final int count = FoundNumCounter.getAndUpdateFoundNum(conn);
-                                        if (count >= 0) {
-                                            userFoundCount.append(LocalizationUtils.getPlural(R.plurals.user_finds, count));
-
-                                            if (Settings.isDisplayOfflineLogsHomescreen()) {
-                                                final int offlinefounds = DataStore.getFoundsOffline(conn);
-                                                if (offlinefounds > 0) {
-                                                    userFoundCount.append(" + ").append(LocalizationUtils.getPlural(R.plurals.user_finds_offline, offlinefounds));
-                                                }
-                                            }
-                                        }
-                                        final String userNameText = FoundNumCounter.getNotBlankUserName(conn);
-                                        if (conn instanceof GCConnector && StringUtils.contains(Settings.getUserName(), '@') && StringUtils.isNotBlank(userNameText)) {
-                                            // auto-fix email address used as login instead of username for GC connector (#16397)
-                                            Settings.setGCUserName(userNameText);
-                                            Log.d("Auto-fixed GC login settings from email to username");
-                                        }
-                                        return new Pair<>(userFoundCount, userNameText);
-                                    },
-                                    p -> {
-                                        if (conn instanceof GCConnector) {
-                                            connectorStatus.setText(connInfo.append(Formatter.SEPARATOR).append(LocalizationUtils.getString(Settings.isGCPremiumMember() ? R.string.gc_premium : R.string.gc_basic)));
-                                        }
-                                        final TextView userName = connectorInfo.findViewById(R.id.item_title);
-                                        final TextView userFounds = connectorInfo.findViewById(R.id.item_info);
-                                        userName.setText(p.second);
-                                        userName.setOnClickListener(v -> {
-                                            ShareUtils.openUrl(getContext(), conn.getMyAccountUrl());
-                                        });
-                                        final String userFoundCount = p.first.toString();
-                                        if (userFoundCount.isEmpty()) {
-                                            userFounds.setVisibility(View.GONE);
-                                        } else {
-                                            userFounds.setVisibility(View.VISIBLE);
-                                            userFounds.setText(userFoundCount);
-                                            userFounds.setOnClickListener(v -> {
-                                                activity.startActivity(CacheListActivity.getHistoryIntent(activity));
-                                                ActivityMixin.overrideTransitionToFade(activity);
-                                            });
-                                            userFounds.setOnLongClickListener(v -> {
-                                                getContext().startActivity(CacheListActivity.getHistoryIntent(activity, conn));
-                                                ActivityMixin.overrideTransitionToFade(activity);
-                                                return true;
-                                            });
-                                        }
-                                    });
-
-                            final ImageView userAvatar = connectorInfo.findViewById(R.id.item_icon);
-
-                            if (conn instanceof IAvatar) {
-                                // already reserve space, so that other content does not jump as soon as avatar is loaded
-                                userAvatar.setVisibility(View.INVISIBLE);
-                                userAvatar.setOnClickListener(null);
-
-                                AndroidRxUtils.andThenOnUi(AndroidRxUtils.networkScheduler,
-                                        () -> AvatarUtils.getAvatar((IAvatar) conn),
-                                        img -> {
-                                            userAvatar.setVisibility(View.VISIBLE);
-                                            if (img == null) {
-                                                userAvatar.setImageResource(R.drawable.avartar_placeholder);
-                                            } else {
-                                                userAvatar.setImageDrawable(img);
-                                            }
-                                            userAvatar.setOnClickListener(connectorConfig);
-                                        });
-                            } else {
-                                userAvatar.setVisibility(View.GONE);
-                            }
+                        final String userNameText = FoundNumCounter.getNotBlankUserName(conn);
+                        if (conn instanceof GCConnector && StringUtils.contains(Settings.getUserName(), '@') && StringUtils.isNotBlank(userNameText)) {
+                            // auto-fix email address used as login instead of username for GC connector (#16397)
+                            Settings.setGCUserName(userNameText);
+                            Log.d("Auto-fixed GC login settings from email to username");
+                        }
+                        return new Pair<>(userFoundCount, userNameText);
+                    },
+                    p -> {
+                        if (conn instanceof GCConnector) {
+                            connectorStatus.setText(connInfo.append(Formatter.SEPARATOR).append(LocalizationUtils.getString(Settings.isGCPremiumMember() ? R.string.gc_premium : R.string.gc_basic)));
+                        }
+                        final TextView userName = connectorInfo.findViewById(R.id.item_title);
+                        final TextView userFounds = connectorInfo.findViewById(R.id.item_info);
+                        userName.setText(p.second);
+                        userName.setOnClickListener(v -> {
+                            ShareUtils.openUrl(activity, conn.getMyAccountUrl());
+                        });
+                        final String userFoundCount = p.first.toString();
+                        if (userFoundCount.isEmpty()) {
+                            userFounds.setVisibility(View.GONE);
+                        } else {
+                            userFounds.setVisibility(View.VISIBLE);
+                            userFounds.setText(userFoundCount);
+                            userFounds.setOnClickListener(v -> {
+                                activity.startActivity(CacheListActivity.getHistoryIntent(activity));
+                                ActivityMixin.overrideTransitionToFade(activity);
+                            });
+                            userFounds.setOnLongClickListener(v -> {
+                                activity.startActivity(CacheListActivity.getHistoryIntent(activity, conn));
+                                ActivityMixin.overrideTransitionToFade(activity);
+                                return true;
+                            });
                         }
                     });
-                }
+
+            final ImageView userAvatar = connectorInfo.findViewById(R.id.item_icon);
+
+            if (conn instanceof IAvatar) {
+                // already reserve space, so that other content does not jump as soon as avatar is loaded
+                userAvatar.setVisibility(View.INVISIBLE);
+                userAvatar.setOnClickListener(null);
+
+                AndroidRxUtils.andThenOnUi(AndroidRxUtils.networkScheduler,
+                        () -> AvatarUtils.getAvatar((IAvatar) conn),
+                        img -> {
+                            userAvatar.setVisibility(View.VISIBLE);
+                            if (img == null) {
+                                userAvatar.setImageResource(R.drawable.avartar_placeholder);
+                            } else {
+                                userAvatar.setImageDrawable(img);
+                            }
+                            userAvatar.setOnClickListener(connectorConfig);
+                        });
+            } else {
+                userAvatar.setVisibility(View.GONE);
             }
         }
     }
