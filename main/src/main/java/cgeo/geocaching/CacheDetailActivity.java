@@ -2015,6 +2015,10 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
                     binding.descriptionTranslateExternal,
                     binding.descriptionTranslateExternalNote,
                     () -> getListingForTranslate(cache));
+            // the split button makes its menu part a toggle (checked = rounder shape while its menu is open); we open a
+            // dialog instead, which would leave it toggled, so it is a plain button here
+            ((MaterialButton) binding.descriptionTranslateLanguage).setCheckable(false);
+
             // the separator above the translate buttons follows them: they show up (or not) once the language is known
             binding.descriptionTranslateRow.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
                 final boolean anyButton = binding.descriptionTranslate.getVisibility() == View.VISIBLE
