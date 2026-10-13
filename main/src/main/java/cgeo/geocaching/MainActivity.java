@@ -112,6 +112,10 @@ public class MainActivity extends AbstractNavigationBarActivity {
      */
     private SearchView searchView;
     private MenuItem searchItem;
+    /** home screen short of room: storage card as one line (first step of {@link #fitHomeToScreen()}) */
+    private boolean compactStorage = false;
+    /** home screen still short of room: search in the toolbar instead of the search field (second step) */
+    private boolean searchInToolbar = false;
 
     private boolean initialized = false;
 
@@ -297,6 +301,7 @@ public class MainActivity extends AbstractNavigationBarActivity {
             cLog.add("init");
 
             initHomeSearch();
+            binding.mainscreen.getViewTreeObserver().addOnGlobalLayoutListener(this::fitHomeToScreen);
             // "not logged in" notice: error level, "Details" explains and offers the service settings, no dismiss
             final View notLoggedIn = binding.infoNotloggedin.getRoot();
             styleNotice(notLoggedIn, true);
@@ -635,8 +640,8 @@ public class MainActivity extends AbstractNavigationBarActivity {
             searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
             searchView.setSuggestionsAdapter(new GeocacheSuggestionsAdapter(this));
             SearchUtils.setSearchViewColor(searchView);
-            // the home screen has its own search field
-            searchItem.setVisible(false);
+            // the home screen has its own search field, unless it is short of room
+            searchItem.setVisible(searchInToolbar);
 
             // initialize menu items
             DownloaderUtils.addManageOfflineDataMenu(this, menu.findItem(R.id.menu_manage_offline_data));
@@ -716,8 +721,47 @@ public class MainActivity extends AbstractNavigationBarActivity {
             setStorageTile(binding.storageCaches, R.string.home_storage_caches, stats[0]);
             setStorageTile(binding.storageLists, R.string.home_storage_lists, stats[1]);
             setStorageTile(binding.storageOfflineLogs, R.string.home_storage_offline_logs, stats[2]);
-            binding.storageDatabase.setText(LocalizationUtils.getString(R.string.home_storage_database, Formatter.formatBytes(DataStore.databasePath().length())));
+            final String databaseSize = Formatter.formatBytes(DataStore.databasePath().length());
+            binding.storageDatabase.setText(LocalizationUtils.getString(R.string.home_storage_database, databaseSize));
+            binding.storageCompact.setText(StringUtils.joinWith(Formatter.SEPARATOR,
+                    LocalizationUtils.getPlural(R.plurals.cache_counts, stats[0]),
+                    LocalizationUtils.getPlural(R.plurals.popup_list_count, stats[1]),
+                    LocalizationUtils.getPlural(R.plurals.home_storage_offline_logs_count, stats[2]),
+                    databaseSize));
+            applyStorageMode();
         }, throwable -> Log.e("Unable to add cache count", throwable)));
+    }
+
+    private void applyStorageMode() {
+        binding.storageTiles.setVisibility(compactStorage ? View.GONE : View.VISIBLE);
+        binding.storageDatabase.setVisibility(compactStorage ? View.GONE : View.VISIBLE);
+        binding.storageCompact.setVisibility(compactStorage ? View.VISIBLE : View.GONE);
+    }
+
+    /**
+     * Collapses the home screen step by step while its content does not fit the screen: first the storage card
+     * becomes one line, then the search field moves into the toolbar. Notices are left out, so the layout does not
+     * change when they come and go; with notices the screen scrolls instead. Only ever collapses, so it cannot
+     * flip back and forth; it starts over when the activity is recreated (e.g. after rotating).
+     */
+    private void fitHomeToScreen() {
+        if (searchInToolbar) {
+            return; // nothing left to collapse
+        }
+        final int available = binding.getRoot().getHeight();
+        // content below the notices (which all sit above the reminders' bottom edge)
+        final int needed = binding.quicklaunchitems.getBottom() + binding.mainscreen.getPaddingBottom() - binding.reminders.getBottom();
+        if (available <= 0 || needed <= available) {
+            return;
+        }
+        if (!compactStorage) {
+            compactStorage = true;
+            applyStorageMode();
+        } else {
+            searchInToolbar = true;
+            binding.searchPill.setVisibility(View.GONE);
+            invalidateOptionsMenu();
+        }
     }
 
     private static void setStorageTile(@NonNull final CachedetailStatTileBinding tile, @StringRes final int label, final int value) {
