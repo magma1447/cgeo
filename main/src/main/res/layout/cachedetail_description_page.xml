@@ -195,7 +195,7 @@
                 android:textColor="@color/colorText" />
         </LinearLayout>
 
-        <!-- additional images of the cache ("spoiler images"), between two separators -->
+        <!-- additional images of the cache ("spoiler images"), last on the page, below a separator -->
 
         <LinearLayout
             android:id="@+id/spoiler_box"
@@ -221,11 +221,6 @@
                 android:textSize="@dimen/textSize_detailsPrimary"
                 android:textColor="@color/colorText"
                 app:drawableLeftCompat="@drawable/log_img_icon" />
-
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
         </LinearLayout>
     </LinearLayout>
 
