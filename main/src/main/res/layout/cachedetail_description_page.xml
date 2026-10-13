@@ -52,84 +52,107 @@
                 android:indeterminateOnly="true" />
         </RelativeLayout>
 
-        <!-- translation box -->
+        <!-- translation: offline as a split button (translate from the source language | choose the language)
+             and the external app or website as a plain button; one alone takes the full width -->
+        <!-- separates the buttons from the description; shown only with a button (see DescriptionViewCreator) -->
+        <View
+            android:id="@+id/description_translate_separator"
+            style="@style/separator_horizontal"
+            android:layout_marginTop="9dp"
+            android:visibility="gone" />
+
         <LinearLayout
-            android:id="@+id/description_translate"
+            android:id="@+id/description_translate_row"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
+            android:layout_marginTop="12dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
 
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
+            <LinearLayout
+                android:id="@+id/description_translate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
 
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                <!-- no vertical padding, so it lines up with the button next to it -->
+                <com.google.android.material.button.MaterialSplitButton
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="0dp"
+                    android:paddingBottom="0dp">
+
+                    <Button
+                        android:id="@+id/description_translate_button"
+                        style="?attr/materialSplitButtonLeadingFilledTonalStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:text="@string/translate"
+                        android:tooltipText="@string/translator_tooltip"
+                        app:icon="@drawable/ic_menu_translate"
+                        tools:text="Swedish" />
+
+                    <Button
+                        android:id="@+id/description_translate_language"
+                        style="@style/Widget.Material3.Button.TonalButton.Icon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="48dp"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:contentDescription="@string/translator_language_select"
+                        android:tooltipText="@string/translator_language_select"
+                        app:icon="@drawable/expand_more"
+                        app:iconPadding="0dp"
+                        app:iconSize="24dp" />
+                </com.google.android.material.button.MaterialSplitButton>
 
                 <TextView
                     android:id="@+id/description_translate_note"
-                    android:tooltipText="@string/translator_tooltip"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentLeft="true"
-                    android:layout_centerVertical="true"
-                    android:layout_gravity="left"
-                    android:layout_marginLeft="6dip"
-                    android:layout_marginRight="60dip"
-                    android:paddingRight="3dip"
-                    android:textSize="@dimen/textSize_detailsSecondary"
-                    android:textColor="@color/colorText"
-                    android:textIsSelectable="false" />
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                    android:textColor="@color/colorTextHint"
+                    android:textIsSelectable="false"
+                    android:visibility="gone" />
+            </LinearLayout>
 
-                <Button
-                    android:id="@+id/description_translate_button"
-                    style="@style/button_icon"
-                    android:layout_alignParentRight="true"
-                    app:icon="@drawable/ic_menu_translate" />
-            </RelativeLayout>
-        </LinearLayout>
-
-        <!-- external translation box -->
-        <LinearLayout
-            android:id="@+id/description_translate_external"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:id="@+id/description_translate_external_note"
-                    android:tooltipText="@string/translate"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentLeft="true"
-                    android:layout_centerVertical="true"
-                    android:layout_gravity="left"
-                    android:layout_marginLeft="6dip"
-                    android:layout_marginRight="60dip"
-                    android:paddingRight="3dip"
-                    android:textSize="@dimen/textSize_detailsSecondary"
-                    android:textColor="@color/colorText"
-                    android:textIsSelectable="false" />
+            <LinearLayout
+                android:id="@+id/description_translate_external"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
 
                 <Button
                     android:id="@+id/description_translate_external_button"
-                    style="@style/button_icon"
-                    android:layout_alignParentRight="true"
-                    app:icon="@drawable/ic_menu_translate" />
-            </RelativeLayout>
+                    style="@style/Widget.Material3.Button.TonalButton.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:tooltipText="@string/translate"
+                    app:icon="@drawable/ic_globe"
+                    tools:text="Google Translate" />
+
+                <!-- filled by TranslationUtils.registerTranslation; the button names the service instead -->
+                <TextView
+                    android:id="@+id/description_translate_external_note"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- geochecker box -->

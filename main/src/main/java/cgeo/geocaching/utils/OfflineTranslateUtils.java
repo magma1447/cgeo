@@ -228,6 +228,9 @@ public class OfflineTranslateUtils {
         }
         final TextView note = translationBox.findViewById(R.id.description_translate_note);
         final Button button = translationBox.findViewById(R.id.description_translate_button);
+        // optional: a separate control to choose the source language (e.g. the menu part of a split button); the
+        // translate button then shows the source language and the note only messages
+        final View languageSelector = translationBox.findViewById(R.id.description_translate_language);
 
         // add observer to listing language
         cda.translationStatus.setSourceLanguageChangeConsumer(lng -> {
@@ -238,20 +241,30 @@ public class OfflineTranslateUtils {
                 showTranslationBox = true;
                 if (lng.getCode() == null) { //no language detected
                     button.setEnabled(false);
-                    note.setText(R.string.translator_language_unknown);
+                    setNoteAndLanguage(note, button, languageSelector, LocalizationUtils.getString(R.string.translator_language_unknown), LocalizationUtils.getString(R.string.translate));
                 } else if (!TranslationModelManager.get().getSupportedLanguages().contains(lng.getCode())) {
                     button.setEnabled(true);
-                    note.setText(LocalizationUtils.getString(R.string.translator_language_unsupported, lng.toString()));
+                    setNoteAndLanguage(note, button, languageSelector, LocalizationUtils.getString(R.string.translator_language_unsupported, lng.toString()), languageName(lng));
                 } else {
                     button.setEnabled(true);
-                    note.setText(LocalizationUtils.getString(R.string.translator_language_detected, lng.toString()));
+                    setNoteAndLanguage(note, button, languageSelector, languageSelector == null ? LocalizationUtils.getString(R.string.translator_language_detected, lng.toString()) : null, languageName(lng));
                 }
             }
             AndroidRxUtils.runOnUi(() -> translationBox.setVisibility(showTranslationBox ? View.VISIBLE : View.GONE));
         });
 
         button.setOnClickListener(v -> callback.run());
-        note.setOnClickListener(v -> OfflineTranslateUtils.showLanguageSelection(cda, cda.translationStatus::setSourceLanguage));
+        final View.OnClickListener selectLanguage = v -> OfflineTranslateUtils.showLanguageSelection(cda, cda.translationStatus::setSourceLanguage);
+        note.setOnClickListener(selectLanguage);
+        if (languageSelector != null) {
+            languageSelector.setOnClickListener(selectLanguage);
+            // a long tap on the translate button chooses the language too, as on the cache hint
+            final View.OnLongClickListener selectLanguageLong = v -> {
+                selectLanguage.onClick(v);
+                return true;
+            };
+            button.setOnLongClickListener(selectLanguageLong);
+        }
 
         // identify listing language
         OfflineTranslateUtils.detectLanguage(translateText,
@@ -261,6 +274,27 @@ public class OfflineTranslateUtils {
                     button.setEnabled(false);
                     note.setText(error);
                 });
+    }
+
+    /** the plain language name, e.g. "Swedish" (no flag or code, so it fits half a screen) */
+    private static String languageName(@NonNull final Language lng) {
+        return new Locale(lng.getCode()).getDisplayName(Settings.getApplicationLocale());
+    }
+
+    /**
+     * Without a separate language selector the note says everything; with one the translate button shows the
+     * source language and the note only messages.
+     */
+    private static void setNoteAndLanguage(final TextView note, final Button button, @Nullable final View languageSelector, @Nullable final String noteText, final String languageText) {
+        AndroidRxUtils.runOnUi(() -> {
+            if (languageSelector == null) {
+                note.setText(noteText);
+                return;
+            }
+            button.setText(languageText);
+            note.setText(noteText);
+            note.setVisibility(StringUtils.isBlank(noteText) ? View.GONE : View.VISIBLE);
+        });
     }
 
     public static OfflineTranslateUtils.Language getAppLanguageOrDefault() {

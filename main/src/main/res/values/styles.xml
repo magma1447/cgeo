@@ -225,6 +225,15 @@
         <item name="materialThemeOverlay">@style/IconButtonThemeOverlay</item>
     </style>
 
+    <!-- a smaller icon button, to sit next to a single line of text (e.g. the translation cards) -->
+    <style name="button_icon_small" parent="button_icon">
+        <item name="android:layout_width">40dp</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:paddingLeft">9dp</item>
+        <item name="android:paddingRight">9dp</item>
+        <item name="iconSize">22dp</item>
+    </style>
+
     <style name="button_icon_with_text" parent="button_icon">
         <item name="android:layout_width">wrap_content</item>
     </style>
