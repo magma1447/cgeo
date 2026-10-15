@@ -24,6 +24,63 @@
         android:fontFeatureSettings="tnum"
         tools:text="1.5" />
 
+    <!-- difficulty and terrain as stars instead of the value (only the D/T tile, toggled by tapping it) -->
+    <LinearLayout
+        android:id="@+id/stat_stars"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:text="@string/cache_difficulty_short"
+                android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+                android:textColor="@color/colorTextHint" />
+
+            <RatingBar
+                android:id="@+id/stat_stars_difficulty"
+                style="@style/cacheRatingBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:numStars="5"
+                tools:rating="1.5" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:text="@string/cache_terrain_short"
+                android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+                android:textColor="@color/colorTextHint" />
+
+            <RatingBar
+                android:id="@+id/stat_stars_terrain"
+                style="@style/cacheRatingBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:numStars="5"
+                tools:rating="2" />
+        </LinearLayout>
+    </LinearLayout>
+
     <TextView
         android:id="@+id/stat_label"
         android:layout_width="wrap_content"

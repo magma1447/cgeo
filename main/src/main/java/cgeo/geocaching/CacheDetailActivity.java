@@ -1375,6 +1375,18 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             return text;
         }
 
+        /** difficulty and terrain as "1.5 / 2.0", or as two rows of stars; tapping the tile switches (remembered) */
+        private static void showDifficultyTerrain(@NonNull final CachedetailStatTileBinding tile, @NonNull final Geocache cache) {
+            final boolean asStars = Settings.getBoolean(R.string.pref_details_dt_as_stars, false);
+            setStatTile(tile, R.string.cache_difficulty_terrain_short, formatRating(cache.getDifficulty()) + " / " + formatRating(cache.getTerrain()));
+            tile.statStarsDifficulty.setRating(cache.getDifficulty());
+            tile.statStarsTerrain.setRating(cache.getTerrain());
+            tile.statValue.setVisibility(asStars ? View.GONE : View.VISIBLE);
+            tile.statStars.setVisibility(asStars ? View.VISIBLE : View.GONE);
+            // the star rows are labeled D and T themselves
+            tile.statLabel.setVisibility(asStars ? View.GONE : View.VISIBLE);
+        }
+
         @NonNull
         private static String formatRating(final float rating) {
             return rating > 0 ? String.format(Locale.getDefault(), "%.1f", rating) : "–";
@@ -1413,7 +1425,11 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
             details.addShareAction(cachename);
             details.addShareAction(binding.hero.heroSubtitle);
             details.add(R.string.cache_type, cache.getType().getL10n());
-            setStatTile(binding.hero.statDifficultyTerrain, R.string.cache_difficulty_terrain_short, formatRating(cache.getDifficulty()) + " / " + formatRating(cache.getTerrain()));
+            showDifficultyTerrain(binding.hero.statDifficultyTerrain, cache);
+            binding.hero.statDifficultyTerrain.getRoot().setOnClickListener(v -> {
+                Settings.putBoolean(R.string.pref_details_dt_as_stars, !Settings.getBoolean(R.string.pref_details_dt_as_stars, false));
+                showDifficultyTerrain(binding.hero.statDifficultyTerrain, cache);
+            });
             setStatTile(binding.hero.statSize, R.string.cache_size, cache.getSize().getL10n());
             setStatTile(binding.hero.statFavorites, R.string.caches_sort_favorites, formatFavorites(cache));
             if (cache.supportsNamechange()) {
