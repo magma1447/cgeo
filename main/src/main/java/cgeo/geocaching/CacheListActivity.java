@@ -1032,7 +1032,7 @@ public class CacheListActivity extends AbstractListActivity implements FilteredA
         final Geocache cache = adapter.getItem(adapterInfo.position);
         assert cache != null;
 
-        menu.setHeaderTitle(ViewUtils.contextMenuHeader(this, StringUtils.defaultIfBlank(cache.getName(), cache.getShortGeocode())));
+        ViewUtils.setContextMenuHeader(this, menu, StringUtils.defaultIfBlank(cache.getName(), cache.getShortGeocode()));
 
         contextMenuGeocode = cache.getGeocode();
 
