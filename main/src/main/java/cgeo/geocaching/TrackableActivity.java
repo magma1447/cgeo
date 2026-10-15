@@ -296,6 +296,7 @@ public class TrackableActivity extends TabbedViewPagerActivity {
         }
         MenuUtils.setVisible(menu.findItem(R.id.menu_translate), trackable != null && TranslationUtils.isEnabled());
         menu.findItem(R.id.menu_translate).setTitle(TranslationUtils.getTranslationLabel());
+        TranslationUtils.applyTranslationIcon(this, menu.findItem(R.id.menu_translate));
 
         return super.onPrepareOptionsMenu(menu);
     }

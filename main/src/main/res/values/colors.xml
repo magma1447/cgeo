@@ -18,8 +18,6 @@
     <color name="colorText_listsPrimary">@color/colorText</color>
     <color name="colorText_listsSecondary">@color/colorTextHint</color>
 
-    <color name="osm_zoomcontrol">#FF666666</color>
-    <color name="osm_zoomcontrolbackground">#FFFFFFFF</color>
 
     <!-- default colors for map lines -->
 

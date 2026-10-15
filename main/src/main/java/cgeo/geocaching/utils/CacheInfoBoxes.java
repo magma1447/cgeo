@@ -20,6 +20,7 @@ import cgeo.geocaching.network.Network;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.settings.SettingsActivity;
 import cgeo.geocaching.storage.DataStore;
+import cgeo.geocaching.ui.SimpleItemListModel;
 import cgeo.geocaching.ui.TextParam;
 import cgeo.geocaching.ui.ViewUtils;
 import cgeo.geocaching.ui.dialog.SimpleDialog;
@@ -40,6 +41,7 @@ import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
+import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.GridView;
@@ -47,8 +49,10 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.core.content.ContextCompat;
 import androidx.core.text.HtmlCompat;
+import androidx.core.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,7 +78,6 @@ public class CacheInfoBoxes {
                                         final View.OnClickListener refreshCacheClickListener,
                                         final View.OnClickListener dropCacheClickListener,
                                         final View.OnClickListener storeCacheClickListener,
-                                        final View.OnClickListener showHintClickListener,
                                         final View.OnLongClickListener moveCacheListener,
                                         final View.OnLongClickListener storeCachePreselectedListener) {
         if (view == null) {
@@ -87,21 +90,6 @@ public class CacheInfoBoxes {
         final View offlineStore = view.findViewById(R.id.offline_store);
         final View offlineDrop = view.findViewById(R.id.offline_drop);
         final View offlineEdit = view.findViewById(R.id.offline_edit);
-
-        // check if hint is available and set onClickListener and hint button visibility accordingly
-        final boolean hintButtonEnabled = setOfflineHintText(showHintClickListener, view.findViewById(R.id.offline_hint_text), cache.getHint(), cache.getPersonalNote());
-        final View offlineHint = view.findViewById(R.id.offline_hint);
-        if (null != offlineHint) {
-            if (hintButtonEnabled) {
-                offlineHint.setVisibility(View.VISIBLE);
-                offlineHint.setClickable(true);
-                offlineHint.setOnClickListener(showHintClickListener);
-            } else {
-                offlineHint.setVisibility(View.GONE);
-                offlineHint.setClickable(false);
-                offlineHint.setOnClickListener(null);
-            }
-        }
 
         offlineStore.setClickable(true);
         offlineStore.setOnClickListener(storeCacheClickListener);
@@ -122,7 +110,9 @@ public class CacheInfoBoxes {
 
         if (cache.isOffline()) {
             final long detailedUpdate = cache.getDetailedUpdate();
-            offlineText.setText(Formatter.formatStoredAgo(detailedUpdate));
+            // the map popup uses a compact layout and a compact age
+            final boolean compact = view.findViewById(R.id.offline_compact_row) != null;
+            offlineText.setText(compact ? Formatter.formatStoredAgoCompact(detailedUpdate) : Formatter.formatStoredAgo(detailedUpdate));
             // allow toggling between the relative ("stored ... ago") and the exact date by tapping the text
             offlineText.setTag(Boolean.FALSE);
             offlineText.setClickable(true);
@@ -131,7 +121,7 @@ public class CacheInfoBoxes {
                 offlineText.setTag(showExact);
                 offlineText.setText(showExact
                         ? Formatter.formatStoredExact(detailedUpdate)
-                        : Formatter.formatStoredAgo(detailedUpdate));
+                        : compact ? Formatter.formatStoredAgoCompact(detailedUpdate) : Formatter.formatStoredAgo(detailedUpdate));
             });
 
             offlineStore.setVisibility(View.GONE);
@@ -147,6 +137,51 @@ public class CacheInfoBoxes {
             offlineDrop.setVisibility(View.GONE);
             offlineEdit.setVisibility(View.GONE);
         }
+        collapseOfflineActions(view, offlineEdit, offlineRefresh, offlineDrop, moveCacheListener);
+    }
+
+    /**
+     * When more than one of the lists/refresh/delete buttons applies, show a single menu button
+     * instead, so that the "stored ... ago" text gets the room and every row ends in one icon.
+     */
+    private static void collapseOfflineActions(final View view, final View offlineEdit, final View offlineRefresh, final View offlineDrop,
+                                               @Nullable final View.OnLongClickListener moveCacheListener) {
+        final View offlineMore = view.findViewById(R.id.offline_more);
+        if (offlineMore == null) {
+            return;
+        }
+        final List<Pair<Integer, Runnable>> actions = new ArrayList<>();
+        if (offlineEdit.getVisibility() == View.VISIBLE) {
+            actions.add(new Pair<>(R.string.menu_lists, offlineEdit::performClick));
+            if (moveCacheListener != null) {
+                actions.add(new Pair<>(R.string.cache_menu_move_list, () -> moveCacheListener.onLongClick(offlineEdit)));
+            }
+        }
+        if (offlineRefresh.getVisibility() == View.VISIBLE) {
+            actions.add(new Pair<>(R.string.cache_offline_refresh, offlineRefresh::performClick));
+        }
+        if (offlineDrop.getVisibility() == View.VISIBLE) {
+            actions.add(new Pair<>(R.string.cache_offline_delete, offlineDrop::performClick));
+        }
+        if (actions.size() < 2) {
+            offlineMore.setVisibility(View.GONE);
+            return;
+        }
+        offlineEdit.setVisibility(View.GONE);
+        offlineRefresh.setVisibility(View.GONE);
+        offlineDrop.setVisibility(View.GONE);
+        offlineMore.setVisibility(View.VISIBLE);
+        offlineMore.setOnClickListener(v -> {
+            final PopupMenu popup = new PopupMenu(v.getContext(), v);
+            for (int i = 0; i < actions.size(); i++) {
+                popup.getMenu().add(Menu.NONE, i, i, actions.get(i).first);
+            }
+            popup.setOnMenuItemClickListener(item -> {
+                actions.get(item.getItemId()).second.run();
+                return true;
+            });
+            popup.show();
+        });
     }
 
 
@@ -199,19 +234,11 @@ public class CacheInfoBoxes {
     }
 
     @SuppressLint("SetTextI18n")
-    private static boolean setOfflineHintText(final View.OnClickListener showHintClickListener, final TextView offlineHintTextView, final String hint, final String personalNote) {
-        if (null != showHintClickListener) {
-            final boolean hintGiven = StringUtils.isNotEmpty(hint);
-            final boolean personalNoteGiven = StringUtils.isNotEmpty(personalNote);
-            if (hintGiven || personalNoteGiven) {
-                offlineHintTextView.setText((hintGiven ? hint + (personalNoteGiven ? "\r\n" : "") : "") + (personalNoteGiven ? personalNote : ""));
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static void updateCacheListsAndMatchingFilters(final View view, final Geocache cache, @Nullable final CacheDetailActivity cacheDetailActivity) {
+        if (view.findViewById(R.id.offline_compact_row) != null) {
+            updateCompactListsAndMatchingFilters(view, cache);
+            return;
+        }
         final SpannableStringBuilder builder = new SpannableStringBuilder();
 
         // only display "Lists: ..." if the cache is actually stored offline (i.e. part of at least one list)
@@ -311,6 +338,107 @@ public class CacheInfoBoxes {
         if (inactive) {
             builder.setSpan(new ForegroundColorSpan(ContextCompat.getColor(CgeoApplication.getInstance(), R.color.colorTextHint)), start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
+    }
+
+    /**
+     * Map popup variant: "Stored + N lists" (or the only list's name, or "N lists") and "Matches N filters",
+     * where the counts open a chooser. Keeps both texts short and finger-sized.
+     */
+    private static void updateCompactListsAndMatchingFilters(final View view, final Geocache cache) {
+        final Context context = view.getContext();
+
+        // lists
+        final TextView offlineLists = view.findViewById(R.id.offline_lists);
+        final SpannableStringBuilder lists = new SpannableStringBuilder();
+        if (cache.isOffline()) {
+            final List<Integer> listIds = new ArrayList<>(cache.getLists());
+            if (listIds.remove(Integer.valueOf(StoredList.STANDARD_LIST_ID))) {
+                appendClickable(lists, DataStore.getList(StoredList.STANDARD_LIST_ID).getTitle(), () -> openList(context, StoredList.STANDARD_LIST_ID));
+                if (!listIds.isEmpty()) {
+                    lists.append(" + ");
+                    appendClickable(lists, LocalizationUtils.getPlural(R.plurals.popup_list_count, listIds.size()), () -> chooseList(context, listIds));
+                }
+            } else if (listIds.size() == 1) {
+                final int listId = listIds.get(0);
+                appendClickable(lists, DataStore.getList(listId).getTitle(), () -> openList(context, listId));
+            } else if (!listIds.isEmpty()) {
+                appendClickable(lists, LocalizationUtils.getPlural(R.plurals.popup_list_count, listIds.size()), () -> chooseList(context, listIds));
+            }
+        }
+        offlineLists.setText(lists);
+        offlineLists.setMovementMethod(LinkMovementMethod.getInstance());
+        offlineLists.setVisibility(lists.length() > 0 ? View.VISIBLE : View.GONE);
+
+        // matching named filters
+        final View marker = view.findViewById(R.id.marker_button);
+        final TextView matching = view.findViewById(R.id.marker_text);
+        final Settings.NamedFilterDisplayMode mode = Settings.getNamedFilterDisplayMode();
+        final boolean showFilters = mode != Settings.NamedFilterDisplayMode.NONE;
+        if (marker != null) {
+            marker.setVisibility(showFilters ? View.VISIBLE : View.GONE);
+            if (showFilters) {
+                FilterUtils.registerFilterActivateDeactivateButton(context, marker);
+            }
+        }
+        final View divider = view.findViewById(R.id.offline_filters_divider);
+        if (divider != null) {
+            divider.setVisibility(showFilters ? View.VISIBLE : View.GONE);
+        }
+        if (matching == null) {
+            return;
+        }
+        if (!showFilters) {
+            matching.setVisibility(View.GONE);
+            return;
+        }
+        final ImmutablePair<List<NamedFilter>, List<NamedFilter>> matches = NamedFilter.getFiltersMatchingCache(cache, mode == Settings.NamedFilterDisplayMode.ACTIVE_ONLY, -1);
+        final List<NamedFilter> filters = new ArrayList<>(matches.left);
+        filters.addAll(matches.right);
+        final SpannableStringBuilder text = new SpannableStringBuilder();
+        if (filters.isEmpty()) {
+            text.append(LocalizationUtils.getString(R.string.popup_filters_none));
+        } else {
+            text.append(LocalizationUtils.getString(R.string.popup_filters_matches)).append(" ");
+            appendClickable(text, LocalizationUtils.getPlural(R.plurals.popup_filter_count, filters.size()), () -> chooseFilter(context, filters));
+        }
+        matching.setText(text);
+        matching.setMovementMethod(LinkMovementMethod.getInstance());
+        matching.setVisibility(View.VISIBLE);
+    }
+
+    private static void appendClickable(final SpannableStringBuilder builder, final String text, final Runnable action) {
+        final int start = builder.length();
+        builder.append(text);
+        builder.setSpan(new ClickableSpan() {
+            @Override
+            public void onClick(@NonNull final View widget) {
+                action.run();
+            }
+        }, start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    }
+
+    private static void openList(final Context context, final int listId) {
+        Settings.setLastDisplayedList(listId);
+        CacheListActivity.startActivityOffline(context, null);
+    }
+
+    private static void chooseList(final Context context, final List<Integer> listIds) {
+        final SimpleDialog.ItemSelectModel<Integer> model = new SimpleDialog.ItemSelectModel<>();
+        model.setItems(listIds)
+                .setDisplayMapper(id -> TextParam.text(DataStore.getList(id).getTitle()))
+                .setChoiceMode(SimpleItemListModel.ChoiceMode.SINGLE_PLAIN);
+        SimpleDialog.ofContext(context).setTitle(TextParam.id(R.string.popup_lists_title)).selectSingle(model, id -> openList(context, id));
+    }
+
+    private static void chooseFilter(final Context context, final List<NamedFilter> filters) {
+        final SimpleDialog.ItemSelectModel<NamedFilter> model = new SimpleDialog.ItemSelectModel<>();
+        model.setItems(filters)
+                .setDisplayMapper(f -> TextParam.text(StringUtils.isNotBlank(f.getMarkerId()) ? f.getMarkerId() + " " + f.getName() : f.getName()))
+                .setChoiceMode(SimpleItemListModel.ChoiceMode.SINGLE_PLAIN);
+        SimpleDialog.ofContext(context).setTitle(TextParam.id(R.string.popup_filters_title)).selectSingle(model, filter -> {
+            Settings.setLastDisplayedList(PseudoList.ALL_LIST.id);
+            CacheListActivity.startActivityOffline(context, filter);
+        });
     }
 
     private static void appendClickableList(final SpannableStringBuilder builder, final View view, final Integer listId, @Nullable final CacheDetailActivity cacheDetailActivity) {

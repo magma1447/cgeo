@@ -87,6 +87,7 @@ public enum CacheType {
     @NonNull
     private static final Map<String, CacheType> FIND_BY_GUID = new HashMap<>();
     @NonNull private static final Map<String, CacheType> FIND_BY_WPT_TYPE = new HashMap<>();
+    private static final float LIGHT_SKIN_ACTIONBAR_LIGHTNESS = 0.86f;
 
     static {
         for (final CacheType ct : values()) {
@@ -207,11 +208,17 @@ public enum CacheType {
 
             final float[] hsl = ColorUtils.getHslValues(colorInt);
 
-            // darker color by 15%
             final float offSet1 = Settings.getSaturationOffset(isLightSkin);
             final float offSet2 = Settings.getLightnessOffset(isLightSkin);
             hsl[1] = Math.max(0f, Math.min(1f, hsl[1] + offSet1));
-            hsl[2] = Math.max(0f, Math.min(1f, hsl[2] + offSet2));
+            if (isLightSkin) {
+                // light skin: a pale tonal container of the cache type color, so that the
+                // regular (dark) toolbar text and icons stay readable on top of it
+                hsl[2] = Math.max(0f, Math.min(1f, LIGHT_SKIN_ACTIONBAR_LIGHTNESS + offSet2 / 2));
+            } else {
+                // dark skin: a darker shade of the cache type color
+                hsl[2] = Math.max(0f, Math.min(1f, hsl[2] + offSet2));
+            }
 
             actionbarColor = ColorUtils.getColorFromHslValues(hsl);
         } else {

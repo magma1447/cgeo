@@ -11,6 +11,7 @@ import android.app.Activity;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
 import java.util.ArrayList;
@@ -64,6 +65,12 @@ public class ContextMenuDialog {
         return this;
     }
 
+    /** an item with an icon which is not a resource, e.g. another app's icon */
+    public ContextMenuDialog addItem(final String text, @NonNull final ImageParam icon, final Action1<Item> selectAction) {
+        items.add(new Item(text, icon, selectAction));
+        return this;
+    }
+
     public ContextMenuDialog setOnClickAction(final Consumer<Integer> clickAction) {
         this.dialogClickAction = clickAction;
         return this;
@@ -71,7 +78,7 @@ public class ContextMenuDialog {
 
     public void show() {
 
-        final boolean atLeastOneElementHasIcon = CollectionStream.of(items).filter(i -> i.icon > 0).count() > 0;
+        final boolean atLeastOneElementHasIcon = CollectionStream.of(items).filter(i -> i.icon > 0 || i.image != null).count() > 0;
 
         final Consumer<Item> clickListener = (it) -> {
             if (it.selectAction != null) {
@@ -88,7 +95,7 @@ public class ContextMenuDialog {
         final SimpleDialog.ItemSelectModel<ContextMenuDialog.Item> model = new SimpleDialog.ItemSelectModel<>();
         model
             .setItems(items)
-            .setDisplayMapper((it) -> TextParam.text(it.toString()).setImage(atLeastOneElementHasIcon ? ImageParam.id(it.icon) : null, atLeastOneElementHasIcon ? 30 : 0))
+            .setDisplayMapper((it) -> TextParam.text(it.toString()).setImage(atLeastOneElementHasIcon ? (it.image != null ? it.image : ImageParam.id(it.icon)) : null, atLeastOneElementHasIcon ? 30 : 0))
             .setChoiceMode(SimpleItemListModel.ChoiceMode.SINGLE_PLAIN);
 
         SimpleDialog.of(this.activity).setTitle(this.title == null ? null : TextParam.text(this.title))
@@ -99,11 +106,22 @@ public class ContextMenuDialog {
     public static class Item {
         public final String text;
         public final int icon;
+        /** an icon which is not a resource; takes precedence over {@link #icon} */
+        @Nullable
+        public final ImageParam image;
         public final Action1<Item> selectAction;
 
         public Item(final String text, @DrawableRes final int icon, final Action1<Item> selectAction) {
             this.text = text;
             this.icon = icon;
+            this.image = null;
+            this.selectAction = selectAction;
+        }
+
+        public Item(final String text, @NonNull final ImageParam image, final Action1<Item> selectAction) {
+            this.text = text;
+            this.icon = 0;
+            this.image = image;
             this.selectAction = selectAction;
         }
 

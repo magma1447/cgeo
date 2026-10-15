@@ -9,10 +9,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:background="@color/primary_material_dark"
+        android:background="@color/colorBackgroundActionBar"
         android:minHeight="?attr/actionBarSize"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+        android:theme="@style/tool_bar"
+        app:popupTheme="@style/appToolbarPopup" />
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/content_wrapper"

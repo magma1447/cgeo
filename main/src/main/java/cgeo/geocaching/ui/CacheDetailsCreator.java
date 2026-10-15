@@ -44,7 +44,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.text.HtmlCompat;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -391,6 +393,33 @@ public final class CacheDetailsCreator {
         final TextView view = add(cache.isEventCache() ? R.string.cache_event : R.string.cache_hidden, dateString).valueView;
         view.setId(R.id.date);
         return view;
+    }
+
+    /**
+     * "Last visited": date of the newest found or didn't-find log, with the date of the newest found log
+     * appended when it differs
+     */
+    public void addLastVisited(final Geocache cache) {
+        LogEntry visited = null;
+        LogEntry found = null;
+        for (final LogEntry log : cache.getLogs()) {
+            if ((log.logType.isFoundLog() || log.logType == LogType.DIDNT_FIND_IT) && (visited == null || log.date > visited.date)) {
+                visited = log;
+            }
+            if (log.logType.isFoundLog() && (found == null || log.date > found.date)) {
+                found = log;
+            }
+        }
+        if (visited == null) {
+            return;
+        }
+        final SimpleDateFormat isoDate = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        final String visitedDate = isoDate.format(new Date(visited.date));
+        String text = visitedDate;
+        if (found != null && !isoDate.format(new Date(found.date)).equals(visitedDate)) {
+            text += " (" + LocalizationUtils.getString(R.string.cache_last_visited_found, isoDate.format(new Date(found.date))) + ")";
+        }
+        add(R.string.cache_last_visited, text);
     }
 
     public void addLatestLogs(final Geocache cache) {

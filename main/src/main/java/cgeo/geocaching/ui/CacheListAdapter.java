@@ -29,10 +29,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Typeface;
-import android.view.GestureDetector;
+import android.text.Layout;
+import android.text.SpannableStringBuilder;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
@@ -47,6 +49,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -54,6 +57,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.disposables.Disposable;
@@ -75,6 +79,9 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
 
     private final Set<CompassMiniView> compasses = new LinkedHashSet<>();
     private final Set<DistanceView> distances = new LinkedHashSet<>();
+    /** cache names scroll sideways together: the shared offset and the name views currently bound */
+    private int nameScrollX = 0;
+    private final Set<TextView> nameViews = Collections.newSetFromMap(new WeakHashMap<>());
     private final CacheListType cacheListType;
     private List<AbstractList> storedLists = null;
     private String currentListTitle = "";
@@ -478,6 +485,8 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
         compasses.add(holder.binding.direction);
         holder.binding.direction.setTargetCoords(cache.getCoords());
         holder.binding.text.setText(TextUtils.coloredCacheText(getContext(), cache, StringUtils.defaultIfBlank(cache.getName(), "")), TextView.BufferType.SPANNABLE);
+        nameViews.add(holder.binding.text);
+        holder.binding.text.post(() -> applyNameScroll(holder.binding.text));
         holder.cacheListType = cacheListType;
         updateViewHolder(holder, cache, res);
 
@@ -521,15 +530,15 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
             }
         }
 
+        // favorite points as "<heart> N"
         final int favCount = cache.getFavoritePoints();
+        holder.binding.favorite.setVisibility(favCount >= 0 ? View.VISIBLE : View.GONE);
         holder.binding.favorite.setText(Formatter.formatFavCount(favCount));
-        final float rating = cache.getRating();
-        holder.binding.favorite.setBackgroundResource(rating >= 3.5 ? R.drawable.favorite_background_green : rating >= 2.1 ? R.drawable.favorite_background_orange : rating > 0.0 ? R.drawable.favorite_background_red : R.drawable.favorite_background);
 
         if (isHistory() && cache.getVisitedDate() > 0) {
             holder.binding.info.setText(Formatter.formatCacheInfoHistory(cache));
         } else {
-            holder.binding.info.setText(Formatter.formatCacheInfoLong(cache, storedLists, currentListTitle));
+            holder.binding.info.setText(keepInfoItemsTogether(Formatter.formatCacheInfoLong(cache, storedLists, currentListTitle)));
         }
 
         return v;
@@ -566,15 +575,67 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
         }
     }
 
+    /** let the info line wrap only after a " · " separator, never inside an item like "D 1.5" */
+    @NonNull
+    private static CharSequence keepInfoItemsTogether(@NonNull final CharSequence info) {
+        final SpannableStringBuilder result = new SpannableStringBuilder(info);
+        for (int i = 0; i < result.length(); i++) {
+            // the only breakable space is the one after a separator dot
+            if (result.charAt(i) == ' ' && (i == 0 || result.charAt(i - 1) != '·')) {
+                result.replace(i, i + 1, "\u00A0");
+            }
+        }
+        return result;
+    }
+
+    /** how far a name extends beyond its view, i.e. how far it can be scrolled */
+    private static int nameOverflow(@NonNull final TextView name) {
+        final Layout layout = name.getLayout();
+        if (layout == null || name.getWidth() == 0) {
+            return 0;
+        }
+        final int visible = name.getWidth() - name.getTotalPaddingLeft() - name.getTotalPaddingRight();
+        return Math.max(0, (int) Math.ceil(layout.getLineWidth(0)) - visible);
+    }
+
+    private void applyNameScroll(@NonNull final TextView name) {
+        name.scrollTo(Math.min(nameScrollX, nameOverflow(name)), 0);
+    }
+
+    /** scroll all names by dx, but not beyond the end of the longest name on screen */
+    private void scrollNamesBy(final int dx) {
+        int maxOverflow = 0;
+        for (final TextView name : nameViews) {
+            maxOverflow = Math.max(maxOverflow, nameOverflow(name));
+        }
+        nameScrollX = Math.max(0, Math.min(maxOverflow, Math.min(nameScrollX, maxOverflow) + dx));
+        for (final TextView name : nameViews) {
+            applyNameScroll(name);
+        }
+    }
+
+    /**
+     * Row touch handling:
+     * - a sideways drag that starts on the cache name scrolls all names together
+     * - a sideways drag that starts on the left edge (found marker, checkbox, cache icon) switches
+     *   selection mode: to the right selects this cache, to the left leaves selection mode
+     * Any speed works; once a drag is recognized, the row's tap and long tap are cancelled.
+     */
     private static class TouchListener implements View.OnClickListener, View.OnLongClickListener, View.OnTouchListener {
 
+        private static final float SELECTION_DRAG_DP = 24f;
+
         private final Geocache cache;
-        private final GestureDetector gestureDetector;
         @NonNull private final WeakReference<CacheListAdapter> adapterRef;
+        private float downX;
+        private float downY;
+        private float lastX;
+        private boolean startedOnName;
+        private boolean startedOnHandle;
+        private boolean dragging;
 
         TouchListener(final Geocache cache, @NonNull final CacheListAdapter adapter) {
             this.cache = cache;
-            gestureDetector = new GestureDetector(adapter.getContext(), new FlingGesture(cache, adapter));
             adapterRef = new WeakReference<>(adapter);
         }
 
@@ -600,64 +661,88 @@ public class CacheListAdapter extends ArrayAdapter<Geocache> implements SectionI
             return true;
         }
 
-        // Swipe on item
         @SuppressLint("ClickableViewAccessibility")
         @Override
         public boolean onTouch(final View view, final MotionEvent event) {
-            return gestureDetector.onTouchEvent(event);
-
-        }
-    }
-
-    private static class FlingGesture extends GestureDetector.SimpleOnGestureListener {
-
-        private static final int SWIPE_MIN_DISTANCE = 60;
-        private static final int SWIPE_MAX_OFF_PATH = 100;
-
-        private final Geocache cache;
-        @NonNull private final WeakReference<CacheListAdapter> adapterRef;
-
-        FlingGesture(final Geocache cache, @NonNull final CacheListAdapter adapter) {
-            this.cache = cache;
-            adapterRef = new WeakReference<>(adapter);
-        }
-
-        @Override
-        public boolean onFling(final MotionEvent e1, @NonNull final MotionEvent e2, final float velocityX, final float velocityY) {
-            try {
-                if (Math.abs(e1.getY() - e2.getY()) > SWIPE_MAX_OFF_PATH) {
-                    return false;
-                }
-                final CacheListAdapter adapter = adapterRef.get();
-                if (adapter == null) {
-                    return false;
-                }
-
-                // horizontal swipe
-                if (Math.abs(velocityX) > Math.abs(velocityY)) {
-
-                    // left to right swipe
-                    if ((e2.getX() - e1.getX()) > SWIPE_MIN_DISTANCE) {
-                        if (!adapter.selectMode) {
-                            adapter.switchSelectMode();
-                            cache.setStatusChecked(true);
-                        }
-                        return true;
-                    }
-
-                    // right to left swipe
-                    if ((e1.getX() - e2.getX()) > SWIPE_MIN_DISTANCE) {
-                        if (adapter.selectMode) {
-                            adapter.switchSelectMode();
-                        }
-                        return true;
-                    }
-                }
-            } catch (final Exception e) {
-                Log.w("CacheListAdapter.FlingGesture.onFling", e);
+            final CacheListAdapter adapter = adapterRef.get();
+            if (adapter == null) {
+                return false;
             }
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    downX = event.getRawX();
+                    downY = event.getRawY();
+                    lastX = downX;
+                    dragging = false;
+                    startedOnName = isInside(view.findViewById(R.id.text), downX, downY);
+                    startedOnHandle = isInside(view.findViewById(R.id.text_icon), downX, downY)
+                            || isInside(view.findViewById(R.id.log_status_mark), downX, downY)
+                            || isInside(view.findViewById(R.id.checkbox), downX, downY);
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    // a finger that moves is not a long tap (otherwise slow sideways moves open the context menu)
+                    if (!dragging && Math.hypot(event.getRawX() - downX, event.getRawY() - downY) > ViewConfiguration.get(view.getContext()).getScaledTouchSlop()) {
+                        view.cancelLongPress();
+                    }
+                    if ((startedOnName || startedOnHandle) && !dragging) {
+                        final float dx = Math.abs(event.getRawX() - downX);
+                        final float dy = Math.abs(event.getRawY() - downY);
+                        if (dx > ViewConfiguration.get(view.getContext()).getScaledTouchSlop() && dx > dy) {
+                            dragging = true;
+                            view.getParent().requestDisallowInterceptTouchEvent(true);
+                            cancelTapAndLongTap(view, event);
+                        }
+                    }
+                    if (dragging && startedOnName) {
+                        adapter.scrollNamesBy(Math.round(lastX - event.getRawX()));
+                        lastX = event.getRawX();
+                        return true;
+                    }
+                    if (dragging && startedOnHandle) {
+                        final float dx = event.getRawX() - downX;
+                        if (Math.abs(dx) > ViewUtils.dpToPixel(SELECTION_DRAG_DP)) {
+                            switchSelection(adapter, dx > 0);
+                            startedOnHandle = false; // once per drag
+                        }
+                        return true;
+                    }
+                    break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    if (dragging) {
+                        dragging = false;
+                        return true;
+                    }
+                    break;
+                default:
+                    break;
+            }
+            return dragging;
+        }
 
-            return false;
+        private void switchSelection(@NonNull final CacheListAdapter adapter, final boolean toTheRight) {
+            if (toTheRight && !adapter.selectMode) {
+                adapter.switchSelectMode();
+                cache.setStatusChecked(true);
+            } else if (!toTheRight && adapter.selectMode) {
+                adapter.switchSelectMode();
+            }
+        }
+
+        private static void cancelTapAndLongTap(@NonNull final View view, @NonNull final MotionEvent event) {
+            final MotionEvent cancel = MotionEvent.obtain(event);
+            cancel.setAction(MotionEvent.ACTION_CANCEL);
+            view.onTouchEvent(cancel);
+            cancel.recycle();
+        }
+
+        private static boolean isInside(@Nullable final View view, final float rawX, final float rawY) {
+            if (view == null || view.getVisibility() != View.VISIBLE) {
+                return false;
+            }
+            final int[] location = new int[2];
+            view.getLocationOnScreen(location);
+            return rawX >= location[0] && rawX < location[0] + view.getWidth() && rawY >= location[1] && rawY < location[1] + view.getHeight();
         }
     }
 

@@ -2,6 +2,7 @@
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/details_scroll"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:scrollbars="none"
@@ -11,7 +12,12 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="4dip" >
+        android:paddingHorizontal="12dp"
+        android:paddingBottom="16dp" >
+
+        <include
+            android:id="@+id/hero"
+            layout="@layout/cachedetail_hero" />
 
         <!-- Details list -->
 
@@ -19,6 +25,10 @@
             android:id="@+id/details_list"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/section_card"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp"
             android:orientation="vertical" >
         </LinearLayout>
 
@@ -28,12 +38,11 @@
             android:id="@+id/attributes_box"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/section_card"
+            android:paddingVertical="12dp"
+            android:paddingHorizontal="6dp"
             android:orientation="vertical" >
-
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
 
             <cgeo.geocaching.ui.WrappingGridView
                 android:id="@+id/attributes_grid"
@@ -62,7 +71,17 @@
                 tools:text="attribute 1\nattribute 2\nattribute 3"/>
         </LinearLayout>
 
-        <!-- Offline box -->
+        <!-- Offline box and the other per-cache actions, grouped in one card -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/section_card"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="12dp"
+            android:orientation="vertical">
+
         <include layout="@layout/cache_offlinebox" />
 
         <!-- Named filter box -->
@@ -74,11 +93,6 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical" >
-
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
 
             <RelativeLayout
                 android:layout_width="fill_parent"
@@ -124,11 +138,6 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
-
             <RelativeLayout
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content" >
@@ -164,11 +173,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone">
-
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
 
             <RelativeLayout
                 android:layout_width="fill_parent"
@@ -209,11 +213,6 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
-
             <RelativeLayout
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content" >
@@ -253,11 +252,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical" >
 
-            <View
-                style="@style/separator_horizontal"
-                android:layout_marginBottom="9dp"
-                android:layout_marginTop="9dp" />
-
             <RelativeLayout
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content" >
@@ -293,6 +287,8 @@
             </RelativeLayout>
         </LinearLayout>
 
+        </LinearLayout>
+
         <!-- License Box -->
 
         <LinearLayout
@@ -319,6 +315,94 @@
                 android:textSize="@dimen/textSize_detailsSecondary"
                 android:textColor="@color/colorText"
                 tools:text="some license text"/>
+        </LinearLayout>
+
+        <!-- Personal note box, last on the page -->
+
+        <LinearLayout
+            android:id="@+id/personalnote_box"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/section_card"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="8dp"
+            android:orientation="vertical">
+
+            <!-- card title, as on the home screen -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="@string/cache_personal_note"
+                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+                android:textColor="@color/md_primary" />
+
+            <TextView
+                android:id="@+id/personalnote"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:linksClickable="true"
+                android:textSize="@dimen/textSize_detailsPrimary"
+                android:textColor="@color/colorText"
+                tools:text="Personal note text\nline 2\nline 3" />
+
+            <View style="@style/flat_separator_horizontal_heading_line"
+                android:id="@+id/personalnote_button_separator" />
+
+            <Button style="@style/button_full"
+                android:id="@+id/personalnote_vars_out_of_sync"
+                android:layout_marginHorizontal="3dp"
+                tools:text="Warning: variables are out of sync"
+                tools:visibility="visible"
+                android:visibility="gone"/>
+
+            <RelativeLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:gravity="right"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/upload_personalnote"
+                        style="@style/button_icon"
+                        android:tooltipText="@string/cache_personal_note_upload"
+                        app:icon="@drawable/ic_menu_upload" />
+
+                    <Button
+                        android:id="@+id/edit_personalnote"
+                        style="@style/button_icon"
+                        android:tooltipText="@string/cache_personal_note_edit"
+                        app:icon="@drawable/ic_menu_edit" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentLeft="true"
+                    android:gravity="left"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/storewaypoints_personalnote"
+                        style="@style/button_icon"
+                        android:tooltipText="@string/cache_personal_note_storewaypoints"
+                        app:icon="@drawable/ic_menu_waypoint_sync" />
+
+                    <Button
+                        android:id="@+id/deleteewaypoints_personalnote"
+                        style="@style/button_icon"
+                        android:tooltipText="@string/cache_personal_note_removewaypoints"
+                        app:icon="@drawable/ic_menu_waypoint_delete" />
+
+                </LinearLayout>
+            </RelativeLayout>
         </LinearLayout>
     </LinearLayout>
 

@@ -45,7 +45,7 @@ public class ActionBarUtils {
         final WindowInsetsControllerCompat windowInsetsController = WindowCompat.getInsetsController(currentWindow, currentWindow.getDecorView());
 
         final boolean isLightSkin = Settings.isLightSkin(activity);
-        windowInsetsController.setAppearanceLightStatusBars(false);
+        windowInsetsController.setAppearanceLightStatusBars(isLightSkin);
         windowInsetsController.setAppearanceLightNavigationBars(isLightSkin);
     }
 

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- home screen spacing for screens with at least 720dp of available height -->
+<resources>
+    <dimen name="home_search_height">56dp</dimen>
+    <dimen name="home_search_margin_top">12dp</dimen>
+    <dimen name="home_gap_first">16dp</dimen>
+    <dimen name="home_gap">12dp</dimen>
+    <dimen name="home_card_padding_top">14dp</dimen>
+    <dimen name="home_card_padding_bottom">12dp</dimen>
+</resources>

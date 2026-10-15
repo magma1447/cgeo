@@ -40,12 +40,44 @@
             </TextView>
             <View style="@style/separator_horizontal" />
 
-            <LinearLayout
-                android:id="@+id/waypoint_details_list"
-                android:layout_width="fill_parent"
+            <FrameLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical" >
-            </LinearLayout>
+                android:paddingTop="4dp">
+
+                <LinearLayout
+                    android:id="@+id/waypoint_details_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <!-- distance and direction, top right next to the first row, as in the cache popup -->
+                <LinearLayout
+                    android:id="@+id/popup_navigation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|end"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingEnd="4dp">
+
+                    <cgeo.geocaching.ui.CompassMiniView
+                        android:id="@+id/popup_compass"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        app:skin="?compass" />
+
+                    <TextView
+                        android:id="@+id/popup_distance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="2dp"
+                        android:fontFeatureSettings="tnum"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                        android:textColor="@color/colorText"
+                        tools:text="0.26 mi" />
+                </LinearLayout>
+            </FrameLayout>
 
             <RelativeLayout
                 android:id="@+id/edit_box"
