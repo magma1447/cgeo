@@ -496,7 +496,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         super.onCreateContextMenu(menu, view, info);
         final int viewId = view.getId();
         if (viewId == R.id.waypoint && selectedWaypoint != null) {
-            menu.setHeaderTitle(selectedWaypoint.getName() + " (" + LocalizationUtils.getString(R.string.waypoint) + ")");
+            menu.setHeaderTitle(ViewUtils.contextMenuHeader(this, selectedWaypoint.getName() + " (" + LocalizationUtils.getString(R.string.waypoint) + ")"));
             getMenuInflater().inflate(R.menu.waypoint_options, menu);
             final boolean isOriginalWaypoint = selectedWaypoint.getWaypointType() == WaypointType.ORIGINAL;
             menu.findItem(R.id.menu_waypoint_reset_cache_coords).setVisible(isOriginalWaypoint);

@@ -225,6 +225,11 @@
         <item name="materialThemeOverlay">@style/IconButtonThemeOverlay</item>
     </style>
 
+    <!-- the header of a context menu: a Material 3 dialog title, so it does not look like one of the items -->
+    <style name="contextMenuHeaderText" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textColor">@color/colorText</item>
+    </style>
+
     <!-- a smaller icon button, to sit next to a single line of text (e.g. the translation cards) -->
     <style name="button_icon_small" parent="button_icon">
         <item name="android:layout_width">40dp</item>
