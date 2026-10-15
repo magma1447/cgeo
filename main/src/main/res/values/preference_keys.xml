@@ -194,6 +194,8 @@
     <string translatable="false" name="pref_personal_cache_note_merge_disable">personalCacheNoteMergeDisable</string>
     <string translatable="false" name="pref_customtabs_as_browser">customtabs_as_browser</string>
     <string translatable="false" name="pref_rot13_hint">pref_scramble_hint</string>
+    <!-- cache details: difficulty/terrain tile shows stars instead of numbers (toggled by tapping the tile) -->
+    <string translatable="false" name="pref_details_dt_as_stars">detailsDtAsStars</string>
     <string translatable="false" name="pref_live_compass_in_navigation_action">live_compass_in_navigation_action</string>
     <string translatable="false" name="pref_collapse_log_limit">pref_collapse_log_limit</string>
     <string translatable="false" name="pref_named_filter_display_mode">named_filter_display_mode</string>
