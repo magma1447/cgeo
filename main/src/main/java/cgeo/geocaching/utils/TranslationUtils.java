@@ -9,17 +9,21 @@ import cgeo.geocaching.utils.html.HtmlUtils;
 import cgeo.geocaching.utils.offlinetranslate.TranslateAccessor;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.InsetDrawable;
 import android.net.Uri;
 import android.os.Build;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -117,11 +121,35 @@ public final class TranslationUtils {
 
     @NonNull
     public static ImageParam getTranslationIcon() {
-        return getTranslator().getIcon();
+        return getDistinctTranslationIcon();
     }
 
     /**
-     * An icon for the external translation that can stand next to the offline one: the app's icon (its monochrome
+     * Sets a menu item's icon to {@link #getDistinctTranslationIcon()}. Our own icons are tinted like the menu's
+     * other icons; an app's icon is set as it is.
+     */
+    public static void applyTranslationIcon(@NonNull final Context context, @Nullable final MenuItem item) {
+        if (item == null) {
+            return;
+        }
+        final ImageParam icon = getDistinctTranslationIcon();
+        if (icon.isReferencedById()) {
+            item.setIcon(getFallbackTranslationIconId(getTranslator()));
+            // the menu tinted its icons when it was created; this one is set later
+            MenuUtils.tintMenuIcon(item);
+        } else {
+            item.setIcon(icon.getAsDrawable(context));
+        }
+    }
+
+    /** without the translator's app: a globe for its website, else an external link */
+    @DrawableRes
+    private static int getFallbackTranslationIconId(@NonNull final Translator translator) {
+        return translator.urlPattern != null ? R.drawable.ic_globe : R.drawable.ic_external_link;
+    }
+
+    /**
+     * The icon for the external translation, used wherever it appears, so it differs from offline translation: the app's icon (its monochrome
      * "themed icon" layer where the app has one, Android 13+), a globe for the website, else an external link.
      */
     @NonNull
@@ -129,7 +157,7 @@ public final class TranslationUtils {
         final Translator translator = getTranslator();
         final ImageParam icon = translator.getIcon();
         if (icon.isReferencedById()) {
-            return ImageParam.id(translator.urlPattern != null ? R.drawable.ic_globe : R.drawable.ic_external_link);
+            return ImageParam.id(getFallbackTranslationIconId(translator));
         }
         final Drawable appIcon = icon.getAsDrawable();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && appIcon instanceof AdaptiveIconDrawable
@@ -173,7 +201,7 @@ public final class TranslationUtils {
         if (label != null) {
             label.setText(getTranslationLabel());
         }
-        getTranslator().getIcon().applyToIcon(button);
+        getDistinctTranslationIcon().applyToIcon(button);
         button.setOnClickListener(v -> {
             final String text = textSupplier.get();
             translate(activity, text);

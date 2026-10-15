@@ -737,6 +737,7 @@ public class CacheDetailActivity extends TabbedViewPagerActivity
         MenuUtils.setVisible(menu.findItem(R.id.menu_set_coordinates), isUDC);
         MenuUtils.setVisible(menu.findItem(R.id.menu_translate), cache != null && TranslationUtils.isEnabled());
         menu.findItem(R.id.menu_translate).setTitle(TranslationUtils.getTranslationLabel());
+        TranslationUtils.applyTranslationIcon(this, menu.findItem(R.id.menu_translate));
 
         if (cache != null) {
             // top level menu items
