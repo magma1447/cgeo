@@ -1693,6 +1693,19 @@
 
     <string name="cache_offline_store">Store</string>
     <string name="cache_offline_stored_ago">Stored %s</string>
+    <string name="cache_offline_stored_ago_short">Stored ~%s ago in</string>
+    <string name="popup_filters_matches">Matches</string>
+    <string name="popup_filters_none">Matches no filters</string>
+    <string name="popup_lists_title">Lists</string>
+    <string name="popup_filters_title">Matching filters</string>
+    <plurals name="popup_list_count">
+        <item quantity="one">%d list</item>
+        <item quantity="other">%d lists</item>
+    </plurals>
+    <plurals name="popup_filter_count">
+        <item quantity="one">%d filter</item>
+        <item quantity="other">%d filters</item>
+    </plurals>
     <string name="cache_offline_not_ready">Not available offline</string>
     <string name="cache_offline_time_mins_few">a few minutes ago</string>
     <plurals name="cache_offline_about_time_mins">
@@ -1782,6 +1795,7 @@
     <string name="cache_waypoints_add_fromclipboard">Add from clipboard</string>
     <string name="cache_waypoints_remove_original_waypoint">Waypoint copied from clipboard to this cache.\n\nRemove original waypoint?</string>
     <string name="cache_hint">Hint</string>
+    <string name="cache_hint_none">None</string>
     <string name="cache_hint_not_available">No hint available</string>
     <string name="cache_logs">Logbook</string>
     <string name="cache_latest_logs">Recent logs</string>
@@ -2264,6 +2278,29 @@
     <!-- search -->
     <string name="geo_search_label">Search caches nearby</string>
     <string name="search_bar_hint">Search caches/trackables</string>
+    <string name="home_your_position">Your position</string>
+    <string name="home_notice_grant">Grant</string>
+    <string name="home_notice_no_location_permission">No permission to get location</string>
+    <string name="home_notice_check">Check</string>
+    <string name="home_notice_open">Open</string>
+    <string name="home_notice_details">Details</string>
+    <string name="home_notice_dismiss">Dismiss</string>
+    <string name="home_notice_mapupdate">Check for updates of map and theme files</string>
+    <string name="home_notice_tileupdate">Check for updates of downloaded routing data</string>
+    <string name="home_notice_notloggedin">Not logged in. The live map only shows caches stored locally.</string>
+    <string name="home_storage">Storage</string>
+    <string name="home_storage_caches">Caches</string>
+    <string name="home_storage_lists">Lists</string>
+    <string name="home_storage_offline_logs">Unsent logs</string>
+    <string name="home_storage_database">Database size: %s</string>
+    <plurals name="home_storage_offline_logs_count">
+        <item quantity="one">%d unsent log</item>
+        <item quantity="other">%d unsent logs</item>
+    </plurals>
+    <string name="cache_difficulty_terrain_short">D / T</string>
+    <string name="cache_last_visited">Last visited</string>
+    <string name="cache_last_visited_found">found: %s</string>
+    <string name="cache_offline_actions">Stored cache actions</string>
     <string name="search_bar_hint_settings">Search settings</string>
     <string name="search_index_updated">Search database updated</string>
     <string name="search_coordinates">Coordinates</string>

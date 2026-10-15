@@ -8,6 +8,8 @@
     <TextView
         android:id="@+id/dialog_title"
         style="?android:attr/windowTitleStyle"
+        android:fontFamily="sans-serif-medium"
+        android:textSize="22sp"
         android:layout_alignParentLeft="true"
         android:textIsSelectable="true"
         android:layout_toLeftOf="@id/dialog_search_icon"

@@ -245,10 +245,6 @@ public abstract class LogsViewCreator extends TabbedViewPagerFragment<LogsPageBi
             });
 
             // translation
-            if (TranslationUtils.isEnabled()) {
-                ctxMenu.addItem(TranslationUtils.getTranslationLabel().toString(), R.drawable.ic_menu_translate, it ->
-                    TranslationUtils.translate(activity, TranslationUtils.prepareForTranslation(log.log)));
-            }
             if (OfflineTranslateUtils.isTargetLanguageValid() && !TranslateAccessor.get().getSupportedLanguages().isEmpty()) {
                 ctxMenu.addItem(R.string.translator_tooltip, R.drawable.ic_menu_translate, it -> {
                     final OfflineTranslateUtils.Status translationStatus = getTranslationStatus(log);
@@ -274,6 +270,11 @@ public abstract class LogsViewCreator extends TabbedViewPagerFragment<LogsPageBi
                                 }, e -> Toast.makeText(getContext(), LocalizationUtils.getString(R.string.translator_translation_error, e.getMessage()), Toast.LENGTH_LONG).show()));
                         }
                 });
+            }
+            // then the external app or website: offline first, as on the description page
+            if (TranslationUtils.isEnabled()) {
+                ctxMenu.addItem(TranslationUtils.getTranslationLabel().toString(), TranslationUtils.getDistinctTranslationIcon(), it ->
+                    TranslationUtils.translate(activity, TranslationUtils.prepareForTranslation(log.log)));
             }
 
             // share

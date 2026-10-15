@@ -21,7 +21,8 @@
         app:labelVisibilityMode="labeled"
         android:background="@color/colorBackgroundTabBar"
         app:itemIconTint="@color/bottom_bar_selector"
-        app:itemTextColor="@color/bottom_bar_selector"
+        app:itemTextColor="@color/bottom_bar_text_selector"
+        app:itemActiveIndicatorStyle="@style/navigationBarActiveIndicator"
         app:paddingTopSystemWindowInsets="false"
         app:menu="@menu/activity_navigationbar_menu" />
 

@@ -2,57 +2,90 @@
 <LinearLayout xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:background="@drawable/card_item_background"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <TextView
-        android:id="@+id/author"
-        style="@style/logitem_author"/>
+    <!-- header: found/DNF strip, author, then log type, date and finder's find count -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/log_mark"
+            android:layout_width="4dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="12dp"
+            android:importantForAccessibility="no"
+            android:scaleType="fitXY"
+            android:src="@drawable/mark_green" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/author"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:fontFamily="sans-serif-medium"
+                android:textSize="@dimen/textSize_headingSecondary"
+                android:textColor="@color/colorText" />
+
+            <LinearLayout
+                android:id="@+id/detail_box"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/type"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:textSize="@dimen/textSize_detailsSecondary"
+                    android:textColor="@color/colorTextHint" />
+
+                <TextView
+                    android:id="@+id/added"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:maxLines="1"
+                    android:textSize="@dimen/textSize_detailsSecondary"
+                    android:textColor="@color/colorTextHint" />
+
+                <TextView
+                    android:id="@+id/count_or_location"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="10dp"
+                    android:ellipsize="end"
+                    android:gravity="end"
+                    android:maxLines="1"
+                    android:textSize="@dimen/textSize_detailsSecondary"
+                    android:textColor="@color/colorTextHint" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:orientation="horizontal">
-
-        <LinearLayout
-            android:id="@+id/detail_box"
-            android:layout_width="@dimen/logItemLeftColumnOuterWidth"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_gravity="left|top"
-            android:orientation="horizontal" >
-
-            <LinearLayout
-                android:layout_width="@dimen/logItemLeftColumnInnerWidth"
-                android:layout_height="wrap_content"
-                android:layout_gravity="right|top"
-                android:orientation="vertical"
-                android:padding="3dip" >
-
-                <TextView
-                    android:id="@+id/added"
-                    style="@style/logitem_property"
-                    android:maxLines="2" />
-
-                <TextView
-                    android:id="@+id/type"
-                    style="@style/logitem_property" />
-
-                <TextView
-                    android:id="@+id/count_or_location"
-                    style="@style/logitem_property"/>
-
-            </LinearLayout>
-
-            <ImageView
-                android:id="@+id/log_mark"
-                style="@style/logitem_mark" />
-        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/log_layout"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/detail_box"
             android:orientation="vertical"
             android:paddingTop="3dip"
             android:paddingLeft="3dip">

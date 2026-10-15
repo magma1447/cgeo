@@ -38,6 +38,7 @@ import android.text.method.ArrowKeyMovementMethod;
 import android.text.util.Linkify;
 import android.util.AttributeSet;
 import android.util.Pair;
+import android.view.ContextMenu;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -969,5 +970,16 @@ public class ViewUtils {
         }
     }
 
+
+
+    /**
+     * Sets a context menu's header as a dialog title, like c:geo's other dialogs. The platform's own header uses
+     * the item style, so it hardly stands out from the items.
+     */
+    public static void setContextMenuHeader(@NonNull final Activity activity, @NonNull final ContextMenu menu, @NonNull final CharSequence title) {
+        final View header = activity.getLayoutInflater().inflate(R.layout.context_menu_header, null);
+        ((TextView) header.findViewById(R.id.context_menu_title)).setText(title);
+        menu.setHeaderView(header);
+    }
 
 }

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the hint as a row of the details list (label column as in cache_information_item),
+     with translate buttons (offline, external) sized for one text line -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="3dp"
+    android:orientation="horizontal">
+
+    <TextView
+        android:layout_width="108sp"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="8dip"
+        android:ellipsize="end"
+        android:lines="1"
+        android:text="@string/cache_hint"
+        android:textColor="@color/colorTextHint"
+        android:textIsSelectable="false"
+        android:textSize="@dimen/textSize_detailsSecondary" />
+
+    <cgeo.geocaching.ui.IndexOutOfBoundsAvoidingTextView
+        android:id="@+id/hint"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:linksClickable="true"
+        android:textColor="@color/colorText"
+        android:textIsSelectable="false"
+        android:textSize="@dimen/textSize_detailsPrimary"
+        tools:text="Ybbx haqre gur yrqtr." />
+
+    <ImageButton
+        android:id="@+id/hint_translate"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_gravity="top"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="-4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/translate"
+        android:padding="6dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_menu_translate"
+        android:tooltipText="@string/translate"
+        android:visibility="gone"
+        app:tint="@color/colorTextHint"
+        tools:visibility="visible" />
+
+    <!-- translation with the external app or website: its own icon, or an external link icon -->
+    <ImageButton
+        android:id="@+id/hint_translate_external"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_gravity="top"
+        android:layout_marginTop="-4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/translate"
+        android:padding="6dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_external_link"
+        android:tooltipText="@string/translate"
+        android:visibility="gone"
+        app:tint="@color/colorTextHint"
+        tools:visibility="visible" />
+</LinearLayout>

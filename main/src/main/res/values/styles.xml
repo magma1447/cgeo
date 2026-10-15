@@ -27,7 +27,7 @@
 
     <!-- checkbox formatting -->
 
-    <style name="checkboxStyle" parent="@style/Widget.MaterialComponents.CompoundButton.CheckBox">
+    <style name="checkboxStyle" parent="@style/Widget.Material3.CompoundButton.CheckBox">
         <item name="android:minHeight">@dimen/radioButtonCheckboxPreferredItemHeight</item>
         <item name="android:textSize">@dimen/textSize_detailsPrimary</item>
         <item name="android:textColor">@color/colorText</item>
@@ -40,7 +40,7 @@
 
     <!-- radiobutton formatting -->
 
-    <style name="radioButtonStyle" parent="@style/Widget.MaterialComponents.CompoundButton.RadioButton">
+    <style name="radioButtonStyle" parent="@style/Widget.Material3.CompoundButton.RadioButton">
         <item name="android:minHeight">@dimen/radioButtonCheckboxPreferredItemHeight</item>
     </style>
 
@@ -57,19 +57,20 @@
 
     <!-- alert dialog formatting -->
 
-    <style name="alertDialogTitleTextStyle" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
-        <item name="android:textSize">@dimen/textSize_headingPrimary</item>
-        <item name="android:textStyle">bold</item>
+    <!-- Material 3 dialog titles are not bold, so they need the size to stand out from list items (e.g. "Quick offline log") -->
+    <style name="alertDialogTitleTextStyle" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textSize">22sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 
-    <style name="alertDialogBodyTextStyle" parent="MaterialAlertDialog.MaterialComponents.Body.Text">
+    <style name="alertDialogBodyTextStyle" parent="MaterialAlertDialog.Material3.Body.Text">
         <item name="android:textSize">@dimen/textSize_detailsPrimary</item>
         <item name="android:textColor">@color/colorText</item>
     </style>
 
     <!-- actionbar -->
 
-    <style name="actionBarStyle" parent="Widget.MaterialComponents.ActionBar.Solid">
+    <style name="actionBarStyle" parent="Widget.Material3.ActionBar.Solid">
         <item name="android:textColorPrimary">@color/colorTextActionBar</item>
         <item name="android:textColor">@color/colorTextActionBar</item>
         <item name="background">@color/colorBackgroundActionBar</item>
@@ -114,7 +115,7 @@
 
     <!-- buttons -->
 
-    <style name="button_base" parent="@style/Widget.MaterialComponents.Button.OutlinedButton">
+    <style name="button_base" parent="@style/Widget.Material3.Button.OutlinedButton">
         <item name="android:padding">6dip</item>
         <item name="android:scrollHorizontally">true</item>
         <item name="android:ellipsize">marquee</item>
@@ -186,6 +187,22 @@
         <item name="android:padding">3dip</item>
     </style>
 
+    <!-- title of the map popups' toolbar -->
+    <style name="popup_toolbar_title" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">18sp</item>
+    </style>
+
+    <!-- "More details" in the map popup: full width as before, but lower -->
+    <style name="button_popup_more" parent="Widget.Material3.Button.TonalButton">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:layout_marginStart">4dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:minHeight">40dp</item>
+        <item name="android:textSize">@dimen/textSize_detailsSecondary</item>
+    </style>
+
     <style name="button_small_popups" parent="button_small">
         <item name="android:layout_height">@dimen/buttonSize_iconButton</item>
         <item name="android:layout_margin">3dp</item>
@@ -210,6 +227,22 @@
         <item name="materialThemeOverlay">@style/IconButtonThemeOverlay</item>
     </style>
 
+    <!-- dialog title, as alertDialogTitleTextStyle: the context menu header and c:geo's own dialogs use it -->
+    <style name="contextMenuHeaderText" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textColor">@color/colorText</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- a smaller icon button, to sit next to a single line of text (e.g. the translation cards) -->
+    <style name="button_icon_small" parent="button_icon">
+        <item name="android:layout_width">40dp</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:paddingLeft">9dp</item>
+        <item name="android:paddingRight">9dp</item>
+        <item name="iconSize">22dp</item>
+    </style>
+
     <style name="button_icon_with_text" parent="button_icon">
         <item name="android:layout_width">wrap_content</item>
     </style>
@@ -226,11 +259,21 @@
 
     <style name="quicklaunch_button" parent="button_icon_accent">
         <item name="materialThemeOverlay">@style/IconButtonThemeOverlay</item>
-        <item name="backgroundTint">#38808080</item>
-        <item name="cornerRadius">12dip</item>
+        <item name="backgroundTint">@color/md_secondary_container</item>
+        <item name="cornerRadius">20dip</item>
         <item name="strokeWidth">0dip</item>
-        <item name="android:layout_margin">7dip</item>
-        <item name="iconSize">24dp</item>
+        <item name="android:layout_margin">4dip</item>
+        <item name="iconSize">26dp</item>
+        <item name="iconGravity">top</item>
+        <item name="iconPadding">6dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:paddingLeft">4dp</item>
+        <item name="android:paddingRight">4dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:textColor">@color/md_on_secondary_container</item>
+        <item name="iconTint">@color/md_on_secondary_container</item>
     </style>
 
     <style name="button_icon_colored" parent="button_icon_accent">
@@ -239,9 +282,16 @@
         <item name="iconTintMode">multiply</item>
     </style>
 
-     <style name="IconButtonThemeOverlay">
-        <!-- For filled buttons, your theme's colorPrimary provides the default background color of the component -->
+    <!-- must extend the M3 button overlay, which defines colorContainer / colorOnContainer -->
+    <style name="IconButtonThemeOverlay" parent="ThemeOverlay.Material3.Button.TextButton">
         <item name="colorPrimary">@color/colorText</item>
+        <item name="colorOnContainer">@color/colorText</item>
+    </style>
+
+    <!-- bottom navigation / navigation rail: brand orange pill behind the selected item -->
+    <style name="navigationBarActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/md_primary_container</item>
+        <item name="android:height">28dp</item>
     </style>
 
     <style name="SqlButton" parent="@style/Widget.MaterialComponents.Button.TextButton.Icon">
@@ -268,9 +318,10 @@
 
     <!-- Chips -->
 
-    <style name="chip_choice" parent="@style/Widget.MaterialComponents.Chip.Filter">
+    <style name="chip_choice" parent="@style/Widget.Material3.Chip.Filter">
         <item name="chipBackgroundColor">@color/chip_background_selector</item>
         <item name="android:textColor">@color/chip_textcolor_selector</item>
+        <item name="checkedIconTint">@color/md_on_primary_container</item>
         <item name="android:padding">6dip</item>
         <item name="android:lines">1</item>
         <item name="android:singleLine">true</item>
@@ -281,7 +332,7 @@
 
     <!-- TextInputLayout for AutoCompleteTextView or EditText -->
 
-    <style name="textinput_autocompletetextview" parent="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+    <style name="textinput_autocompletetextview" parent="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
         <item name="android:padding">6dip</item>
         <item name="android:singleLine">true</item>
         <item name="android:autoText">true</item>
@@ -295,7 +346,7 @@
         <item name="suffixTextColor">@color/colorTextDark</item>
     </style>
 
-    <style name="textinput_edittext" parent="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+    <style name="textinput_edittext" parent="@style/Widget.Material3.TextInputLayout.OutlinedBox">
         <item name="android:padding">6dip</item>
         <item name="android:autoText">true</item>
         <item name="android:gravity">top|left</item>
@@ -313,7 +364,7 @@
         <item name="endIconMode">clear_text</item>
     </style>
 
-    <style name="textinput_dropdown" parent="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+    <style name="textinput_dropdown" parent="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
         <item name="android:padding">6dip</item>
         <item name="android:textAppearance">@style/text_default</item>
     </style>
@@ -462,7 +513,7 @@
     <style name="flat_separator_horizontal_heading_text" parent="@style/TextAppearance.Material3.TitleMedium">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:textColor">@color/colorAccent</item>
+        <item name="android:textColor">@color/md_primary</item>
         <item name="android:textSize">18sp</item>
         <item name="android:paddingLeft">16dp</item>
         <item name="android:paddingRight">16dp</item>
@@ -612,7 +663,7 @@
         <item name="android:layout_marginLeft">16dp</item>
         <item name="android:layout_marginRight">16dp</item>
     </style>
-    <style name="InstallationWizardButtonOutlined" parent="@style/Widget.MaterialComponents.Button.OutlinedButton">
+    <style name="InstallationWizardButtonOutlined" parent="@style/Widget.Material3.Button.OutlinedButton">
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginLeft">16dp</item>
         <item name="android:layout_marginRight">16dp</item>
@@ -629,7 +680,7 @@
         <item name="android:padding">12dp</item>
         <item name="android:layout_marginBottom">12dp</item>
     </style>
-    <style name="InstallationWizardButtonFooterSolid" parent="@style/Widget.MaterialComponents.Button">
+    <style name="InstallationWizardButtonFooterSolid" parent="@style/Widget.Material3.Button">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_alignParentBottom">true</item>

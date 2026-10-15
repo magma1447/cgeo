@@ -14,6 +14,10 @@
     <TextView
         android:id="@+id/location_text"
         style="@style/location_current"
+        android:gravity="start"
+        android:paddingLeft="0dp"
+        android:textSize="18sp"
+        android:textColor="@color/colorText"
         android:textIsSelectable="false"
         android:text="@string/loc_trying" />
 

@@ -7,11 +7,6 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <View
-        style="@style/separator_horizontal"
-        android:layout_marginTop="9dp"
-        android:layout_marginBottom="9dp" />
-
     <LinearLayout
         android:id="@+id/cache_offlinebox_content"
         android:layout_width="match_parent"
@@ -56,6 +51,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
         android:orientation="horizontal">
+
+        <!-- shown instead of edit/refresh/drop when more than one of them applies -->
+        <Button
+            android:id="@+id/offline_more"
+            style="@style/button_icon"
+            app:icon="@drawable/three_dot_vertical"
+            android:visibility="gone"
+            android:tooltipText="@string/cache_offline_actions" />
 
         <Button
             android:id="@+id/offline_edit"

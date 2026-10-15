@@ -15,8 +15,10 @@ import cgeo.geocaching.sensors.GeoDirHandler;
 import cgeo.geocaching.settings.Settings;
 import cgeo.geocaching.storage.DataStore;
 import cgeo.geocaching.ui.CacheDetailsCreator;
+import cgeo.geocaching.ui.CompassMiniView;
 import cgeo.geocaching.ui.CoordinatesFormatSwitcher;
 import cgeo.geocaching.ui.ViewUtils;
+import cgeo.geocaching.utils.AngleUtils;
 import cgeo.geocaching.utils.LocalizationUtils;
 import cgeo.geocaching.utils.Log;
 
@@ -58,14 +60,37 @@ public abstract class AbstractDialogFragment extends Fragment implements CacheMe
             try {
                 if (cacheDistance != null && cache != null && cache.getCoords() != null) {
                     cacheDistance.setText(Units.getDistanceFromKilometers(geo.getCoords().distanceTo(cache.getCoords())));
-                    cacheDistance.bringToFront();
+                    if (getOwnDistanceView() == null) {
+                        cacheDistance.bringToFront();
+                    }
                 }
                 onUpdateGeoData(geo);
             } catch (final RuntimeException e) {
                 Log.w("Failed to update location", e);
             }
         }
+
+        @Override
+        public void updateGeoDir(@NonNull final GeoData geo, final float direction) {
+            final CompassMiniView compass = getOwnCompassView();
+            if (compass != null && cache != null && cache.getCoords() != null) {
+                compass.updateCurrentCoords(geo.getCoords());
+                compass.updateAzimuth(AngleUtils.getDirectionNow(direction));
+            }
+        }
     };
+
+    /** a subclass may show the distance in its own view instead of a "Distance" row */
+    @Nullable
+    protected TextView getOwnDistanceView() {
+        return null;
+    }
+
+    /** direction arrow next to {@link #getOwnDistanceView()}, if any */
+    @Nullable
+    protected CompassMiniView getOwnCompassView() {
+        return null;
+    }
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {
@@ -105,7 +130,7 @@ public abstract class AbstractDialogFragment extends Fragment implements CacheMe
     public void onResume() {
         super.onResume();
         // resume location access
-        resumeDisposables.add(geoUpdate.start(GeoDirHandler.UPDATE_GEODATA));
+        resumeDisposables.add(geoUpdate.start(GeoDirHandler.UPDATE_GEODATA | GeoDirHandler.UPDATE_GEODIR));
         init();
     }
 
@@ -119,17 +144,29 @@ public abstract class AbstractDialogFragment extends Fragment implements CacheMe
     protected final void addCacheDetails(final boolean showGeocode) {
         assert cache != null;
 
+        if (showGeocode) {
+            details.add(R.string.cache_geocode, cache.getShortGeocode());
+        }
+
         // cache type
         final String cacheType = cache.getType().getL10n();
         final String cacheSize = cache.showSize() ? " (" + cache.getSize().getL10n() + ")" : "";
         details.add(R.string.cache_type, cacheType + cacheSize);
-
-        if (showGeocode) {
-            details.add(R.string.cache_geocode, cache.getShortGeocode());
-        }
         details.addCacheState(cache);
 
-        cacheDistance = details.addDistance(cache, cacheDistance);
+        final TextView ownDistance = getOwnDistanceView();
+        if (ownDistance != null) {
+            if (cacheDistance == null || cacheDistance != ownDistance) {
+                ownDistance.setText(cache.getDistance() != null ? Units.getDistanceFromKilometers(cache.getDistance()) : "--");
+            }
+            cacheDistance = ownDistance;
+            final CompassMiniView compass = getOwnCompassView();
+            if (compass != null) {
+                compass.setTargetCoords(cache.getCoords());
+            }
+        } else {
+            cacheDistance = details.addDistance(cache, cacheDistance);
+        }
 
         details.addDifficultyTerrain(cache);
         details.addEventDate(cache);
@@ -190,7 +227,14 @@ public abstract class AbstractDialogFragment extends Fragment implements CacheMe
     private void setAsTarget() {
         final TargetUpdateReceiver activity = (TargetUpdateReceiver) requireActivity();
         activity.onReceiveTargetUpdate(getTargetInfo());
-        ((AbstractNavigationBarMapActivity) requireActivity()).sheetRemoveFragment();
+        if (closeAfterSetAsTarget()) {
+            ((AbstractNavigationBarMapActivity) requireActivity()).sheetRemoveFragment();
+        }
+    }
+
+    /** whether the sheet closes after "set as target" */
+    protected boolean closeAfterSetAsTarget() {
+        return true;
     }
 
     public static void onCreatePopupOptionsMenu(final Toolbar toolbar, final INavigationSource navigationSource, final Geocache geocache) {

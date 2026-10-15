@@ -10,6 +10,7 @@ import cgeo.geocaching.connector.gc.GCConnector;
 import cgeo.geocaching.connector.gc.GCConstants;
 import cgeo.geocaching.connector.gc.PocketQueryListActivity;
 import cgeo.geocaching.connector.internal.InternalConnector;
+import cgeo.geocaching.databinding.CachedetailStatTileBinding;
 import cgeo.geocaching.databinding.MainActivityBinding;
 import cgeo.geocaching.downloader.DownloaderUtils;
 import cgeo.geocaching.downloader.PendingDownloadsActivity;
@@ -18,6 +19,7 @@ import cgeo.geocaching.helper.UsefulAppsActivity;
 import cgeo.geocaching.network.Network;
 import cgeo.geocaching.permission.PermissionAction;
 import cgeo.geocaching.permission.PermissionContext;
+import cgeo.geocaching.search.BaseSuggestionsAdapter;
 import cgeo.geocaching.search.GeocacheSuggestionsAdapter;
 import cgeo.geocaching.search.SearchUtils;
 import cgeo.geocaching.sensors.GeoData;
@@ -61,6 +63,7 @@ import android.app.DownloadManager;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -70,10 +73,11 @@ import android.os.Message;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Space;
 import android.widget.TextView;
 
 import androidx.annotation.DrawableRes;
@@ -91,12 +95,15 @@ import java.util.List;
 
 import com.google.android.material.button.MaterialButton;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.functions.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
 public class MainActivity extends AbstractNavigationBarActivity {
+
+    private static final int MAX_QUICKLAUNCH_PER_ROW = 4;
 
     private MainActivityBinding binding;
 
@@ -105,6 +112,10 @@ public class MainActivity extends AbstractNavigationBarActivity {
      */
     private SearchView searchView;
     private MenuItem searchItem;
+    /** home screen short of room: storage card as one line (first step of {@link #fitHomeToScreen()}) */
+    private boolean compactStorage = false;
+    /** home screen still short of room: search in the toolbar instead of the search field (second step) */
+    private boolean searchInToolbar = false;
 
     private boolean initialized = false;
 
@@ -131,118 +142,116 @@ public class MainActivity extends AbstractNavigationBarActivity {
                     // Get active connectors with login status
                     final ILogin[] loginConns = ConnectorFactory.getActiveLiveConnectors();
 
-                    // Update UI
-                    activity.binding.connectorstatusArea.setAdapter(new ArrayAdapter<ILogin>(activity, R.layout.main_activity_connectorstatus, loginConns) {
-                        @NonNull
-                        @Override
-                        public View getView(final int position, final View convertView, @NonNull final android.view.ViewGroup parent) {
-                            // do NOT use convertView, as it gets filled asynchronously, which may lead to the wrong view being filled
-                            final View view = activity.getLayoutInflater().inflate(R.layout.main_activity_connectorstatus, parent, false);
-                            final ILogin connector = getItem(position);
-                            fillView(view, connector);
-                            return view;
+                    // Update UI: one row per account in the account card
+                    final LinearLayout area = activity.binding.connectorstatusArea;
+                    area.removeAllViews();
+                    for (final ILogin connector : loginConns) {
+                        final View view = activity.getLayoutInflater().inflate(R.layout.main_activity_connectorstatus, area, false);
+                        area.addView(view);
+                        fillView(activity, view, connector);
+                    }
+                    area.setVisibility(loginConns.length > 0 ? View.VISIBLE : View.GONE);
+                }
+            }
+        }
+
+        /** one account row of the home screen's account card */
+        private static void fillView(final MainActivity activity, final View connectorInfo, final ILogin conn) {
+
+            final TextView connectorStatus = connectorInfo.findViewById(R.id.item_status);
+            final boolean isLoggingIn = Strings.CS.equals(conn.getLoginStatusString(), LocalizationUtils.getString(R.string.init_login_popup_working));
+            final boolean isLoggingOk = Strings.CS.equals(conn.getLoginStatusString(), LocalizationUtils.getString(R.string.init_login_popup_ok));
+            final StringBuilder connInfo = new StringBuilder(conn.getNameAbbreviated()).append(Formatter.SEPARATOR).append(conn.getLoginStatusString());
+            if (conn instanceof GCConnector && Network.isConnected() && !isLoggingIn && !isLoggingOk) {
+                final Pair<String, Long> lastError = Settings.getLastLoginErrorGC();
+                if (lastError != null && StringUtils.isNotBlank(lastError.first) && lastError.second > Settings.getLastLoginSuccessGC()) {
+                    connInfo.append(" (").append(lastError.first).append(")");
+                }
+            }
+            connectorStatus.setText(connInfo);
+            final View.OnClickListener connectorConfig = v -> SettingsActivity.openForScreen(conn.getServiceSpecificPreferenceScreenKey(), activity);
+            connectorStatus.setOnClickListener(connectorConfig);
+
+            final Button manualLogin = connectorInfo.findViewById(R.id.manual_login);
+            manualLogin.setVisibility(connInfo.toString().contains(LocalizationUtils.getString(R.string.err_auth_gc_captcha)) ? View.VISIBLE : View.GONE);
+            manualLogin.setOnClickListener(b -> conn.performManualLogin(activity, () -> {
+                if (!activity.isDestroyed() && !activity.isFinishing()) {
+                    activity.updateUserInfoHandler.sendEmptyMessage(-1);
+                    activity.onLoginIssue(!anyConnectorLoggedIn());
+                }
+            }));
+
+            AndroidRxUtils.andThenOnUi(AndroidRxUtils.computationScheduler,
+                    () -> {
+                        final StringBuilder userFoundCount = new StringBuilder();
+
+                        final int count = FoundNumCounter.getAndUpdateFoundNum(conn);
+                        if (count >= 0) {
+                            userFoundCount.append(LocalizationUtils.getPlural(R.plurals.user_finds, count));
+
+                            if (Settings.isDisplayOfflineLogsHomescreen()) {
+                                final int offlinefounds = DataStore.getFoundsOffline(conn);
+                                if (offlinefounds > 0) {
+                                    userFoundCount.append(" + ").append(LocalizationUtils.getPlural(R.plurals.user_finds_offline, offlinefounds));
+                                }
+                            }
                         }
-
-                        private void fillView(final View connectorInfo, final ILogin conn) {
-
-                            final TextView connectorStatus = connectorInfo.findViewById(R.id.item_status);
-                            final boolean isLoggingIn = Strings.CS.equals(conn.getLoginStatusString(), LocalizationUtils.getString(R.string.init_login_popup_working));
-                            final boolean isLoggingOk = Strings.CS.equals(conn.getLoginStatusString(), LocalizationUtils.getString(R.string.init_login_popup_ok));
-                            final StringBuilder connInfo = new StringBuilder(conn.getNameAbbreviated()).append(Formatter.SEPARATOR).append(conn.getLoginStatusString());
-                            if (conn instanceof GCConnector && Network.isConnected() && !isLoggingIn && !isLoggingOk) {
-                                final Pair<String, Long> lastError = Settings.getLastLoginErrorGC();
-                                if (lastError != null && StringUtils.isNotBlank(lastError.first) && lastError.second > Settings.getLastLoginSuccessGC()) {
-                                    connInfo.append(" (").append(lastError.first).append(")");
-                                }
-                            }
-                            connectorStatus.setText(connInfo);
-                            final View.OnClickListener connectorConfig = v -> SettingsActivity.openForScreen(conn.getServiceSpecificPreferenceScreenKey(), activity);
-                            connectorStatus.setOnClickListener(connectorConfig);
-
-                            final Button manualLogin = connectorInfo.findViewById(R.id.manual_login);
-                            manualLogin.setVisibility(connInfo.toString().contains(LocalizationUtils.getString(R.string.err_auth_gc_captcha)) ? View.VISIBLE : View.GONE);
-                            manualLogin.setOnClickListener(b -> conn.performManualLogin(activity, () -> {
-                                if (!activity.isDestroyed() && !activity.isFinishing()) {
-                                    activity.updateUserInfoHandler.sendEmptyMessage(-1);
-                                    activity.onLoginIssue(!anyConnectorLoggedIn());
-                                }
-                            }));
-
-                            AndroidRxUtils.andThenOnUi(AndroidRxUtils.computationScheduler,
-                                    () -> {
-                                        final StringBuilder userFoundCount = new StringBuilder();
-
-                                        final int count = FoundNumCounter.getAndUpdateFoundNum(conn);
-                                        if (count >= 0) {
-                                            userFoundCount.append(LocalizationUtils.getPlural(R.plurals.user_finds, count));
-
-                                            if (Settings.isDisplayOfflineLogsHomescreen()) {
-                                                final int offlinefounds = DataStore.getFoundsOffline(conn);
-                                                if (offlinefounds > 0) {
-                                                    userFoundCount.append(" + ").append(LocalizationUtils.getPlural(R.plurals.user_finds_offline, offlinefounds));
-                                                }
-                                            }
-                                        }
-                                        final String userNameText = FoundNumCounter.getNotBlankUserName(conn);
-                                        if (conn instanceof GCConnector && StringUtils.contains(Settings.getUserName(), '@') && StringUtils.isNotBlank(userNameText)) {
-                                            // auto-fix email address used as login instead of username for GC connector (#16397)
-                                            Settings.setGCUserName(userNameText);
-                                            Log.d("Auto-fixed GC login settings from email to username");
-                                        }
-                                        return new Pair<>(userFoundCount, userNameText);
-                                    },
-                                    p -> {
-                                        if (conn instanceof GCConnector) {
-                                            connectorStatus.setText(connInfo.append(Formatter.SEPARATOR).append(LocalizationUtils.getString(Settings.isGCPremiumMember() ? R.string.gc_premium : R.string.gc_basic)));
-                                        }
-                                        final TextView userName = connectorInfo.findViewById(R.id.item_title);
-                                        final TextView userFounds = connectorInfo.findViewById(R.id.item_info);
-                                        userName.setText(p.second);
-                                        userName.setOnClickListener(v -> {
-                                            ShareUtils.openUrl(getContext(), conn.getMyAccountUrl());
-                                        });
-                                        final String userFoundCount = p.first.toString();
-                                        if (userFoundCount.isEmpty()) {
-                                            userFounds.setVisibility(View.GONE);
-                                        } else {
-                                            userFounds.setVisibility(View.VISIBLE);
-                                            userFounds.setText(userFoundCount);
-                                            userFounds.setOnClickListener(v -> {
-                                                activity.startActivity(CacheListActivity.getHistoryIntent(activity));
-                                                ActivityMixin.overrideTransitionToFade(activity);
-                                            });
-                                            userFounds.setOnLongClickListener(v -> {
-                                                getContext().startActivity(CacheListActivity.getHistoryIntent(activity, conn));
-                                                ActivityMixin.overrideTransitionToFade(activity);
-                                                return true;
-                                            });
-                                        }
-                                    });
-
-                            final ImageView userAvatar = connectorInfo.findViewById(R.id.item_icon);
-
-                            if (conn instanceof IAvatar) {
-                                // already reserve space, so that other content does not jump as soon as avatar is loaded
-                                userAvatar.setVisibility(View.INVISIBLE);
-                                userAvatar.setOnClickListener(null);
-
-                                AndroidRxUtils.andThenOnUi(AndroidRxUtils.networkScheduler,
-                                        () -> AvatarUtils.getAvatar((IAvatar) conn),
-                                        img -> {
-                                            userAvatar.setVisibility(View.VISIBLE);
-                                            if (img == null) {
-                                                userAvatar.setImageResource(R.drawable.avartar_placeholder);
-                                            } else {
-                                                userAvatar.setImageDrawable(img);
-                                            }
-                                            userAvatar.setOnClickListener(connectorConfig);
-                                        });
-                            } else {
-                                userAvatar.setVisibility(View.GONE);
-                            }
+                        final String userNameText = FoundNumCounter.getNotBlankUserName(conn);
+                        if (conn instanceof GCConnector && StringUtils.contains(Settings.getUserName(), '@') && StringUtils.isNotBlank(userNameText)) {
+                            // auto-fix email address used as login instead of username for GC connector (#16397)
+                            Settings.setGCUserName(userNameText);
+                            Log.d("Auto-fixed GC login settings from email to username");
+                        }
+                        return new Pair<>(userFoundCount, userNameText);
+                    },
+                    p -> {
+                        if (conn instanceof GCConnector) {
+                            connectorStatus.setText(connInfo.append(Formatter.SEPARATOR).append(LocalizationUtils.getString(Settings.isGCPremiumMember() ? R.string.gc_premium : R.string.gc_basic)));
+                        }
+                        final TextView userName = connectorInfo.findViewById(R.id.item_title);
+                        final TextView userFounds = connectorInfo.findViewById(R.id.item_info);
+                        userName.setText(p.second);
+                        userName.setOnClickListener(v -> {
+                            ShareUtils.openUrl(activity, conn.getMyAccountUrl());
+                        });
+                        final String userFoundCount = p.first.toString();
+                        if (userFoundCount.isEmpty()) {
+                            userFounds.setVisibility(View.GONE);
+                        } else {
+                            userFounds.setVisibility(View.VISIBLE);
+                            userFounds.setText(userFoundCount);
+                            userFounds.setOnClickListener(v -> {
+                                activity.startActivity(CacheListActivity.getHistoryIntent(activity));
+                                ActivityMixin.overrideTransitionToFade(activity);
+                            });
+                            userFounds.setOnLongClickListener(v -> {
+                                activity.startActivity(CacheListActivity.getHistoryIntent(activity, conn));
+                                ActivityMixin.overrideTransitionToFade(activity);
+                                return true;
+                            });
                         }
                     });
-                }
+
+            final ImageView userAvatar = connectorInfo.findViewById(R.id.item_icon);
+
+            if (conn instanceof IAvatar) {
+                // already reserve space, so that other content does not jump as soon as avatar is loaded
+                userAvatar.setVisibility(View.INVISIBLE);
+                userAvatar.setOnClickListener(null);
+
+                AndroidRxUtils.andThenOnUi(AndroidRxUtils.networkScheduler,
+                        () -> AvatarUtils.getAvatar((IAvatar) conn),
+                        img -> {
+                            userAvatar.setVisibility(View.VISIBLE);
+                            if (img == null) {
+                                userAvatar.setImageResource(R.drawable.avartar_placeholder);
+                            } else {
+                                userAvatar.setImageDrawable(img);
+                            }
+                            userAvatar.setOnClickListener(connectorConfig);
+                        });
+            } else {
+                userAvatar.setVisibility(View.GONE);
             }
         }
     }
@@ -291,8 +300,17 @@ public class MainActivity extends AbstractNavigationBarActivity {
             init();
             cLog.add("init");
 
-            binding.infoNotloggedin.setOnClickListener(v ->
-                    SimpleDialog.of(this).setTitle(R.string.warn_notloggedin_title).setMessage(R.string.warn_notloggedin_long).setButtons(SimpleDialog.ButtonTextSet.YES_NO).confirm(() -> SettingsActivity.openForScreen(R.string.preference_screen_services, this)));
+            initHomeSearch();
+            binding.mainscreen.getViewTreeObserver().addOnGlobalLayoutListener(this::fitHomeToScreen);
+            // "not logged in" notice: error level, "Details" explains and offers the service settings, no dismiss
+            final View notLoggedIn = binding.infoNotloggedin.getRoot();
+            styleNotice(notLoggedIn, true);
+            binding.infoNotloggedin.actionItemInfo.setText(R.string.home_notice_notloggedin);
+            binding.infoNotloggedin.actionItemChevron.setContentDescription(getString(R.string.home_notice_details));
+            binding.infoNotloggedin.actionItemDismiss.setVisibility(View.GONE);
+            final View.OnClickListener notLoggedInDetails = v ->
+                    SimpleDialog.of(this).setTitle(R.string.warn_notloggedin_title).setMessage(R.string.warn_notloggedin_long).setButtons(SimpleDialog.ButtonTextSet.YES_NO).confirm(() -> SettingsActivity.openForScreen(R.string.preference_screen_services, this));
+            notLoggedIn.setOnClickListener(notLoggedInDetails);
 
             // automated update check
             DownloaderUtils.checkForRoutingTileUpdates(this);
@@ -303,7 +321,7 @@ public class MainActivity extends AbstractNavigationBarActivity {
 
             // location permission currently granted?
             if (!PermissionContext.LOCATION.getNotGrantedPermissions().isEmpty()) {
-                displayActionItem(R.id.missingLocationPermission, R.string.location_no_permission, false, doAsk -> {
+                displayActionItem(R.id.missingLocationPermission, R.string.home_notice_no_location_permission, false, doAsk -> {
                     if (doAsk) {
                         this.askLocationPermissionAction.launch(null);
                     }
@@ -402,35 +420,103 @@ public class MainActivity extends AbstractNavigationBarActivity {
         });
     }
 
-    private void prepareQuickLaunchItems() {
-        final int dimSize = DisplayUtils.getPxFromDp(getResources(), 48.0f, 1.0f);
-        final int dimMargin = DisplayUtils.getPxFromDp(getResources(), 7.0f, 1.0f);
-        final LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dimSize, dimSize);
-        lp.setMargins(dimMargin, 0, dimMargin, 0);
+    /** search field on the home screen: same searchable config and suggestions as the toolbar search */
+    private void initHomeSearch() {
+        final SearchView homeSearch = binding.searchPill;
+        final SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        homeSearch.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        homeSearch.setSuggestionsAdapter(new GeocacheSuggestionsAdapter(this));
+        final AutoCompleteTextView input = homeSearch.findViewById(androidx.appcompat.R.id.search_src_text);
+        if (input != null) {
+            input.setTextColor(getResources().getColor(R.color.colorText, null));
+            input.setHintTextColor(getResources().getColor(R.color.md_on_surface_variant, null));
+        }
+        homeSearch.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(final String s) {
+                homeSearch.clearFocus();
+                return false;
+            }
 
-        final List<Integer> quicklaunchitems = Settings.getInfoItems(R.string.pref_quicklaunchitems, 1);
-        binding.quicklaunchitems.removeAllViews();
-        binding.quicklaunchitems.setVisibility(View.GONE);
-        for (int i : quicklaunchitems) {
+            @Override
+            public boolean onQueryTextChange(final String s) {
+                ((BaseSuggestionsAdapter) homeSearch.getSuggestionsAdapter()).changeQuery(s);
+                return true;
+            }
+        });
+        homeSearch.setOnSuggestionListener(new SearchView.OnSuggestionListener() {
+            @Override
+            public boolean onSuggestionSelect(final int position) {
+                return false;
+            }
+
+            @Override
+            public boolean onSuggestionClick(final int position) {
+                // delayed, as changing the query right away changes the adapter's cursor (see #11803)
+                homeSearch.postDelayed(() -> {
+                    homeSearch.setQuery("", false);
+                    homeSearch.clearFocus();
+                }, 1000);
+                return false;
+            }
+        });
+    }
+
+    private void prepareQuickLaunchItems() {
+        final List<QuickLaunchItem> items = new ArrayList<>();
+        for (int i : Settings.getInfoItems(R.string.pref_quicklaunchitems, 1)) {
             final QuickLaunchItem item = (QuickLaunchItem) QuickLaunchItem.getById(i, QuickLaunchItem.ITEMS);
             if (QuickLaunchItem.conditionsFulfilled(item)) {
-                addButton(item.iconRes, lp, () -> QuickLaunchItem.launchQuickLaunchItem(this, item.getId(), true), LocalizationUtils.getString(item.getTitleResId()), item.viewInitializer);
+                items.add(item);
             }
+        }
+        binding.quicklaunchitems.removeAllViews();
+        binding.quicklaunchitems.setVisibility(items.isEmpty() ? View.GONE : View.VISIBLE);
+        if (items.isEmpty()) {
+            return;
+        }
+
+        // up to MAX_QUICKLAUNCH_PER_ROW labeled tiles per row; more items wrap into balanced rows
+        // (5 -> 3+2, 6 -> 3+3, 7 -> 4+3, ...), all tiles sharing the same width
+        final int rows = (items.size() + MAX_QUICKLAUNCH_PER_ROW - 1) / MAX_QUICKLAUNCH_PER_ROW;
+        final int perRow = (items.size() + rows - 1) / rows;
+        final int rowGap = DisplayUtils.getPxFromDp(getResources(), 8.0f, 1.0f);
+        LinearLayout row = null;
+        for (int n = 0; n < items.size(); n++) {
+            if (n % perRow == 0) {
+                row = new LinearLayout(this);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                final LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                rowLp.topMargin = n == 0 ? 0 : rowGap;
+                binding.quicklaunchitems.addView(row, rowLp);
+            }
+            final QuickLaunchItem item = items.get(n);
+            addButton(row, item.iconRes, () -> QuickLaunchItem.launchQuickLaunchItem(this, item.getId(), true), LocalizationUtils.getString(item.getTitleResId()), item.viewInitializer);
+        }
+        while (row.getChildCount() < perRow) {
+            row.addView(new Space(this), quickLaunchTileLayoutParams());
         }
     }
 
-    private void addButton(@DrawableRes final int iconRes, final LinearLayout.LayoutParams lp, final Runnable action, final String tooltip, final java.util.function.Consumer<View> viewInitializer) {
+    private LinearLayout.LayoutParams quickLaunchTileLayoutParams() {
+        final int dimMargin = DisplayUtils.getPxFromDp(getResources(), 4.0f, 1.0f);
+        final LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
+        lp.setMargins(dimMargin, 0, dimMargin, 0);
+        return lp;
+    }
+
+    private void addButton(final LinearLayout row, @DrawableRes final int iconRes, final Runnable action, final String label, final java.util.function.Consumer<View> viewInitializer) {
         final MaterialButton b = new MaterialButton(this, null, R.attr.quickLaunchButtonStyle);
         b.setIconResource(iconRes);
-        b.setLayoutParams(lp);
+        b.setText(label);
+        b.setLayoutParams(quickLaunchTileLayoutParams());
         b.setVisibility(View.VISIBLE);
         b.setOnClickListener(view -> action.run());
         if (viewInitializer != null) {
             viewInitializer.accept(b);
         }
-        TooltipCompat.setTooltipText(b, tooltip);
-        binding.quicklaunchitems.addView(b);
-        binding.quicklaunchitems.setVisibility(View.VISIBLE);
+        TooltipCompat.setTooltipText(b, label);
+        row.addView(b);
     }
 
     private void init() {
@@ -554,6 +640,8 @@ public class MainActivity extends AbstractNavigationBarActivity {
             searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
             searchView.setSuggestionsAdapter(new GeocacheSuggestionsAdapter(this));
             SearchUtils.setSearchViewColor(searchView);
+            // the home screen has its own search field, unless it is short of room
+            searchItem.setVisible(searchInToolbar);
 
             // initialize menu items
             DownloaderUtils.addManageOfflineDataMenu(this, menu.findItem(R.id.menu_manage_offline_data));
@@ -625,13 +713,60 @@ public class MainActivity extends AbstractNavigationBarActivity {
     }
 
     public void updateCacheCounter() {
-        resumeDisposables.add(AndroidRxUtils.bindActivity(this, DataStore.getAllCachesCountObservable()).subscribe(countOfflineCaches -> {
-            final TextView counter = findViewById(R.id.offline_counter);
-            counter.setVisibility(countOfflineCaches > 0 ? View.VISIBLE : View.GONE);
-            if (countOfflineCaches > 0) {
-                counter.setText(LocalizationUtils.getPlural(R.plurals.caches_stored_offline, countOfflineCaches));
-            }
+        // storage card: a few COUNT(*) queries and a file size, done in the background
+        final Single<int[]> storageStats = DataStore.getAllCachesCountObservable().map(caches -> new int[] {
+                caches, DataStore.getListCount(), DataStore.getOfflineLogCount() });
+        resumeDisposables.add(AndroidRxUtils.bindActivity(this, storageStats).subscribe(stats -> {
+            binding.storageCard.setVisibility(View.VISIBLE);
+            setStorageTile(binding.storageCaches, R.string.home_storage_caches, stats[0]);
+            setStorageTile(binding.storageLists, R.string.home_storage_lists, stats[1]);
+            setStorageTile(binding.storageOfflineLogs, R.string.home_storage_offline_logs, stats[2]);
+            final String databaseSize = Formatter.formatBytes(DataStore.databasePath().length());
+            binding.storageDatabase.setText(LocalizationUtils.getString(R.string.home_storage_database, databaseSize));
+            binding.storageCompact.setText(StringUtils.joinWith(Formatter.SEPARATOR,
+                    LocalizationUtils.getPlural(R.plurals.cache_counts, stats[0]),
+                    LocalizationUtils.getPlural(R.plurals.popup_list_count, stats[1]),
+                    LocalizationUtils.getPlural(R.plurals.home_storage_offline_logs_count, stats[2]),
+                    databaseSize));
+            applyStorageMode();
         }, throwable -> Log.e("Unable to add cache count", throwable)));
+    }
+
+    private void applyStorageMode() {
+        binding.storageTiles.setVisibility(compactStorage ? View.GONE : View.VISIBLE);
+        binding.storageDatabase.setVisibility(compactStorage ? View.GONE : View.VISIBLE);
+        binding.storageCompact.setVisibility(compactStorage ? View.VISIBLE : View.GONE);
+    }
+
+    /**
+     * Collapses the home screen step by step while its content does not fit the screen: first the storage card
+     * becomes one line, then the search field moves into the toolbar. Notices are left out, so the layout does not
+     * change when they come and go; with notices the screen scrolls instead. Only ever collapses, so it cannot
+     * flip back and forth; it starts over when the activity is recreated (e.g. after rotating).
+     */
+    private void fitHomeToScreen() {
+        if (searchInToolbar) {
+            return; // nothing left to collapse
+        }
+        final int available = binding.getRoot().getHeight();
+        // content below the notices (which all sit above the reminders' bottom edge)
+        final int needed = binding.quicklaunchitems.getBottom() + binding.mainscreen.getPaddingBottom() - binding.reminders.getBottom();
+        if (available <= 0 || needed <= available) {
+            return;
+        }
+        if (!compactStorage) {
+            compactStorage = true;
+            applyStorageMode();
+        } else {
+            searchInToolbar = true;
+            binding.searchPill.setVisibility(View.GONE);
+            invalidateOptionsMenu();
+        }
+    }
+
+    private static void setStorageTile(@NonNull final CachedetailStatTileBinding tile, @StringRes final int label, final int value) {
+        tile.statValue.setText(String.valueOf(value));
+        tile.statLabel.setText(label);
     }
 
     @Override
@@ -664,13 +799,7 @@ public class MainActivity extends AbstractNavigationBarActivity {
      */
     @Override
     protected void onLoginIssue(final boolean issue) {
-        if (issue) {
-            binding.infoNotloggedinIcon.attributeImage.setImageResource(R.drawable.attribute_wirelessbeacon);
-            binding.infoNotloggedinIcon.attributeStrikethru.setVisibility(View.VISIBLE);
-            binding.infoNotloggedin.setVisibility(View.VISIBLE);
-        } else {
-            binding.infoNotloggedin.setVisibility(View.GONE);
-        }
+        binding.infoNotloggedin.getRoot().setVisibility(issue ? View.VISIBLE : View.GONE);
     }
 
     @Override
@@ -705,23 +834,58 @@ public class MainActivity extends AbstractNavigationBarActivity {
 
     public void displayActionItem(final int layout, final String info, final boolean withBadge, final Action1<Boolean> action) {
         final int delta = withBadge ? 1 : 0;
-        final TextView l = findViewById(layout);
-        if (l != null) {
-            l.setVisibility(View.VISIBLE);
-            updateHomeBadge(delta);
-            l.setText(info);
-            l.setOnClickListener(v -> {
-                action.call(true);
-                l.setVisibility(View.GONE);
-                updateHomeBadge(-delta);
-            });
-            l.setOnLongClickListener(v -> {
-                action.call(false);
-                l.setVisibility(View.GONE);
-                updateHomeBadge(-delta);
-                return true;
-            });
+        final View notice = findViewById(layout);
+        if (notice == null) {
+            return;
         }
+        notice.setVisibility(View.VISIBLE);
+        updateHomeBadge(delta);
+
+        // level, text and action label by kind of notice
+        final boolean isError = layout == R.id.missingLocationPermission;
+        styleNotice(notice, isError);
+        final TextView text = notice.findViewById(R.id.action_item_info);
+        text.setText(layout == R.id.mapupdate ? LocalizationUtils.getString(R.string.home_notice_mapupdate)
+                : layout == R.id.tilesupdate ? LocalizationUtils.getString(R.string.home_notice_tileupdate)
+                : info);
+        // the whole notice is tappable, the chevron shows that; its description names the action
+        notice.findViewById(R.id.action_item_chevron).setContentDescription(LocalizationUtils.getString(
+                layout == R.id.missingLocationPermission ? R.string.home_notice_grant
+                : layout == R.id.mcupdate ? R.string.home_notice_open
+                : R.string.home_notice_check));
+
+        // tap carries out the action, dismiss (or long tap) postpones it
+        final Runnable hide = () -> {
+            notice.setVisibility(View.GONE);
+            updateHomeBadge(-delta);
+        };
+        final View.OnClickListener doIt = v -> {
+            action.call(true);
+            hide.run();
+        };
+        notice.setOnClickListener(doIt);
+        notice.findViewById(R.id.action_item_dismiss).setOnClickListener(v -> {
+            action.call(false);
+            hide.run();
+        });
+        notice.setOnLongClickListener(v -> {
+            action.call(false);
+            hide.run();
+            return true;
+        });
+    }
+
+    /** colors a home screen notice: error (something does not work) or info */
+    private static void styleNotice(@NonNull final View notice, final boolean isError) {
+        final Context context = notice.getContext();
+        final int foreground = context.getColor(isError ? R.color.notice_error_fg : R.color.notice_info_fg);
+        notice.setBackgroundTintList(ColorStateList.valueOf(context.getColor(isError ? R.color.notice_error_bg : R.color.notice_info_bg)));
+        final ImageView icon = notice.findViewById(R.id.action_item_icon);
+        icon.setImageResource(isError ? R.drawable.warning : R.drawable.ic_menu_info_details);
+        icon.setImageTintList(ColorStateList.valueOf(context.getColor(isError ? R.color.notice_error_icon : R.color.notice_info_icon)));
+        ((TextView) notice.findViewById(R.id.action_item_info)).setTextColor(foreground);
+        ((ImageView) notice.findViewById(R.id.action_item_chevron)).setImageTintList(ColorStateList.valueOf(foreground));
+        ((ImageView) notice.findViewById(R.id.action_item_dismiss)).setImageTintList(ColorStateList.valueOf(foreground));
     }
 
 }

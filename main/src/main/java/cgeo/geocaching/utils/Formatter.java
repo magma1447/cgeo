@@ -271,6 +271,7 @@ public final class Formatter {
                 if (hiddenDate != null) {
                     infos.add(new SpannableString(formatDateYYYYMM(hiddenDate.getTime())));
                 }
+
             } else if (item == CacheListInfoItem.VALUES.RECENT_LOGS.id) {
                 final List<LogEntry> logs = cache.getLogs();
                 if (!logs.isEmpty()) {
@@ -401,6 +402,29 @@ public final class Formatter {
         }
 
         return LocalizationUtils.getString(R.string.cache_offline_stored_ago, ago);
+    }
+
+    @NonNull
+    public static String formatStoredAgoCompact(final long updatedTimeMillis) {
+        // compact form for the map popup, e.g. "Stored ~4h ago"
+        if (updatedTimeMillis == 0L) {
+            return LocalizationUtils.getString(R.string.cache_offline_stored_ago, "");
+        }
+        final long minutes = Math.max(0, (System.currentTimeMillis() - updatedTimeMillis) / MINUTE_IN_MILLIS);
+        final long days = minutes / MINUTES_PER_DAY;
+        final String age;
+        if (minutes < 60) {
+            age = minutes + "min";
+        } else if (days < 2) {
+            age = (minutes / 60) + "h";
+        } else if (days < DAYS_PER_MONTH) {
+            age = days + "d";
+        } else if (days < 365) {
+            age = (days / DAYS_PER_MONTH) + "mo";
+        } else {
+            age = (days / 365) + "y";
+        }
+        return LocalizationUtils.getString(R.string.cache_offline_stored_ago_short, age);
     }
 
     /**
