@@ -33,14 +33,12 @@ import android.text.Editable;
 import android.text.InputFilter;
 import android.text.Selection;
 import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.Spanned;
 import android.text.TextWatcher;
 import android.text.method.ArrowKeyMovementMethod;
-import android.text.style.TextAppearanceSpan;
 import android.text.util.Linkify;
 import android.util.AttributeSet;
 import android.util.Pair;
+import android.view.ContextMenu;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -975,14 +973,13 @@ public class ViewUtils {
 
 
     /**
-     * A context menu header styled as a Material 3 dialog title. The platform shows it in the menu's item style,
-     * so without this it hardly stands out from the items below it.
+     * Sets a context menu's header as a dialog title, like c:geo's other dialogs. The platform's own header uses
+     * the item style, so it hardly stands out from the items.
      */
-    @NonNull
-    public static CharSequence contextMenuHeader(@NonNull final Context context, @NonNull final CharSequence title) {
-        final SpannableString header = new SpannableString(title);
-        header.setSpan(new TextAppearanceSpan(context, R.style.contextMenuHeaderText), 0, header.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        return header;
+    public static void setContextMenuHeader(@NonNull final Activity activity, @NonNull final ContextMenu menu, @NonNull final CharSequence title) {
+        final View header = activity.getLayoutInflater().inflate(R.layout.context_menu_header, null);
+        ((TextView) header.findViewById(R.id.context_menu_title)).setText(title);
+        menu.setHeaderView(header);
     }
 
 }

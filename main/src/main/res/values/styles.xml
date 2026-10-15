@@ -57,8 +57,10 @@
 
     <!-- alert dialog formatting -->
 
+    <!-- Material 3 dialog titles are not bold, so they need the size to stand out from list items (e.g. "Quick offline log") -->
     <style name="alertDialogTitleTextStyle" parent="MaterialAlertDialog.Material3.Title.Text">
-        <item name="android:textSize">@dimen/textSize_headingPrimary</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 
     <style name="alertDialogBodyTextStyle" parent="MaterialAlertDialog.Material3.Body.Text">
@@ -225,9 +227,11 @@
         <item name="materialThemeOverlay">@style/IconButtonThemeOverlay</item>
     </style>
 
-    <!-- the header of a context menu: a Material 3 dialog title, so it does not look like one of the items -->
+    <!-- dialog title, as alertDialogTitleTextStyle: the context menu header and c:geo's own dialogs use it -->
     <style name="contextMenuHeaderText" parent="TextAppearance.Material3.TitleLarge">
         <item name="android:textColor">@color/colorText</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 
     <!-- a smaller icon button, to sit next to a single line of text (e.g. the translation cards) -->
